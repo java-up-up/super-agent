@@ -56,5 +56,6 @@ document
 ### Others ###
 .project-guide
 .obsidian
+.DS_Store
 kb-sa
 tmp/
