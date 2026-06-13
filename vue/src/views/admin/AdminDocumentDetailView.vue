@@ -116,113 +116,115 @@
           </button>
         </div>
 
-        <div v-if="chunkDetailLoading" class="drawer-empty">正在加载 chunk 详情...</div>
-        <div v-else-if="!chunkDetail?.chunk" class="drawer-empty">当前没有可展示的 chunk 详情。</div>
-        <template v-else>
-          <div class="drawer-summary">
-            <div class="summary-chip summary-chip-child">
-              <span>当前子块</span>
-              <strong>C#{{ chunkDetail.chunk.chunkNo || '-' }}</strong>
-            </div>
-            <div class="summary-chip summary-chip-parent">
-              <span>所属父块</span>
-              <strong>P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</strong>
-            </div>
-            <div class="summary-chip">
-              <span>同父子块</span>
-              <strong>{{ chunkDetail.parentBlock?.childCount || chunkDetail.siblingChunks?.length || 0 }}</strong>
-            </div>
-          </div>
-
-          <section class="chunk-detail-section chunk-detail-section-current">
-            <div class="chunk-detail-head">
-              <div class="chunk-detail-title-group">
-                <span class="chunk-kind-badge chunk-kind-badge-child">Child Evidence</span>
-                <h4>当前子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</h4>
+        <div class="chunk-detail-body">
+          <div v-if="chunkDetailLoading" class="drawer-empty">正在加载 chunk 详情...</div>
+          <div v-else-if="!chunkDetail?.chunk" class="drawer-empty">当前没有可展示的 chunk 详情。</div>
+          <template v-else>
+            <div class="drawer-summary">
+              <div class="summary-chip summary-chip-child">
+                <span>当前子块</span>
+                <strong>C#{{ chunkDetail.chunk.chunkNo || '-' }}</strong>
               </div>
-              <span>{{ buildChunkRelationText(chunkDetail.chunk) }}</span>
-            </div>
-            <div class="chunk-detail-meta">
-              <span>章节：{{ chunkDetail.chunk.sectionPath || '未识别章节' }}</span>
-              <span>字符：{{ formatCount(chunkDetail.chunk.charCount) }}</span>
-              <span>Token：{{ formatCount(chunkDetail.chunk.tokenCount) }}</span>
-            </div>
-            <pre class="chunk-detail-text">{{ chunkDetail.chunk.chunkText }}</pre>
-          </section>
-
-          <section
-            ref="parentBlockSectionRef"
-            class="chunk-detail-section chunk-detail-section-parent"
-            :class="{ 'chunk-detail-section-focused': chunkDetailFocusMode === 'parent' }"
-            v-if="chunkDetail.parentBlock"
-          >
-            <div class="chunk-detail-head">
-              <div class="chunk-detail-title-group">
-                <span class="chunk-kind-badge chunk-kind-badge-parent">Parent Context</span>
-                <h4>所属父块 P#{{ chunkDetail.parentBlock.parentBlockNo || '-' }}</h4>
+              <div class="summary-chip summary-chip-parent">
+                <span>所属父块</span>
+                <strong>P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</strong>
               </div>
-              <span>子块范围 C#{{ chunkDetail.parentBlock.startChunkNo || '-' }} - C#{{ chunkDetail.parentBlock.endChunkNo || '-' }}</span>
+              <div class="summary-chip">
+                <span>同父子块</span>
+                <strong>{{ chunkDetail.parentBlock?.childCount || chunkDetail.siblingChunks?.length || 0 }}</strong>
+              </div>
             </div>
-            <div class="chunk-detail-meta">
-              <span>章节：{{ chunkDetail.parentBlock.sectionPath || '未识别章节' }}</span>
-              <span>字符：{{ formatCount(chunkDetail.parentBlock.charCount) }}</span>
-              <span>Token：{{ formatCount(chunkDetail.parentBlock.tokenCount) }}</span>
-            </div>
-            <pre class="chunk-detail-text parent-block-text">{{ chunkDetail.parentBlock.parentText }}</pre>
-          </section>
 
-          <section class="chunk-detail-section" v-if="Array.isArray(chunkDetail.siblingChunks) && chunkDetail.siblingChunks.length">
-            <div class="chunk-detail-head">
-              <h4>同父子块关系</h4>
-              <span>点击可切换查看其他子块</span>
-            </div>
-            <div class="chunk-relation-legend">
-              <span>父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</span>
-              <span>当前命中子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</span>
-              <span>同父共 {{ chunkDetail.siblingChunks.length }} 个子块</span>
-            </div>
-            <p class="chunk-relation-note">
-              当前父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }} 内包含
-              {{ formatChunkCodeList(chunkDetail.siblingChunks) }} 这些子块，当前命中的是
-              C#{{ chunkDetail.chunk.chunkNo || '-' }}。
-            </p>
-            <div class="chunk-relation-track">
-              <template v-for="(item, index) in chunkDetail.siblingChunks" :key="`track-${item.chunkId}`">
+            <section class="chunk-detail-section chunk-detail-section-current">
+              <div class="chunk-detail-head">
+                <div class="chunk-detail-title-group">
+                  <span class="chunk-kind-badge chunk-kind-badge-child">Child Evidence</span>
+                  <h4>当前子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</h4>
+                </div>
+                <span>{{ buildChunkRelationText(chunkDetail.chunk) }}</span>
+              </div>
+              <div class="chunk-detail-meta">
+                <span>章节：{{ chunkDetail.chunk.sectionPath || '未识别章节' }}</span>
+                <span>字符：{{ formatCount(chunkDetail.chunk.charCount) }}</span>
+                <span>Token：{{ formatCount(chunkDetail.chunk.tokenCount) }}</span>
+              </div>
+              <pre class="chunk-detail-text">{{ chunkDetail.chunk.chunkText }}</pre>
+            </section>
+
+            <section
+              ref="parentBlockSectionRef"
+              class="chunk-detail-section chunk-detail-section-parent"
+              :class="{ 'chunk-detail-section-focused': chunkDetailFocusMode === 'parent' }"
+              v-if="chunkDetail.parentBlock"
+            >
+              <div class="chunk-detail-head">
+                <div class="chunk-detail-title-group">
+                  <span class="chunk-kind-badge chunk-kind-badge-parent">Parent Context</span>
+                  <h4>所属父块 P#{{ chunkDetail.parentBlock.parentBlockNo || '-' }}</h4>
+                </div>
+                <span>子块范围 C#{{ chunkDetail.parentBlock.startChunkNo || '-' }} - C#{{ chunkDetail.parentBlock.endChunkNo || '-' }}</span>
+              </div>
+              <div class="chunk-detail-meta">
+                <span>章节：{{ chunkDetail.parentBlock.sectionPath || '未识别章节' }}</span>
+                <span>字符：{{ formatCount(chunkDetail.parentBlock.charCount) }}</span>
+                <span>Token：{{ formatCount(chunkDetail.parentBlock.tokenCount) }}</span>
+              </div>
+              <pre class="chunk-detail-text parent-block-text">{{ chunkDetail.parentBlock.parentText }}</pre>
+            </section>
+
+            <section class="chunk-detail-section" v-if="Array.isArray(chunkDetail.siblingChunks) && chunkDetail.siblingChunks.length">
+              <div class="chunk-detail-head">
+                <h4>同父子块关系</h4>
+                <span>点击可切换查看其他子块</span>
+              </div>
+              <div class="chunk-relation-legend">
+                <span>父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</span>
+                <span>当前命中子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</span>
+                <span>同父共 {{ chunkDetail.siblingChunks.length }} 个子块</span>
+              </div>
+              <p class="chunk-relation-note">
+                当前父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }} 内包含
+                {{ formatChunkCodeList(chunkDetail.siblingChunks) }} 这些子块，当前命中的是
+                C#{{ chunkDetail.chunk.chunkNo || '-' }}。
+              </p>
+              <div class="chunk-relation-track">
+                <template v-for="(item, index) in chunkDetail.siblingChunks" :key="`track-${item.chunkId}`">
+                  <button
+                    class="chunk-relation-node"
+                    :class="{ active: isCurrentChunk(item) }"
+                    type="button"
+                    @click="openChunkDetail(item.chunkId)"
+                  >
+                    <strong>C#{{ item.chunkNo || '-' }}</strong>
+                    <span>{{ buildSiblingOrderLabel(index, chunkDetail.siblingChunks.length) }}</span>
+                  </button>
+                  <div
+                    v-if="index < chunkDetail.siblingChunks.length - 1"
+                    class="chunk-relation-line"
+                    :class="{ active: isCurrentChunk(item) || isCurrentChunk(chunkDetail.siblingChunks[index + 1]) }"
+                  ></div>
+                </template>
+              </div>
+              <div class="sibling-chunk-list">
                 <button
-                  class="chunk-relation-node"
-                  :class="{ active: isCurrentChunk(item) }"
+                  v-for="item in chunkDetail.siblingChunks"
+                  :key="`sibling-${item.chunkId}`"
+                  class="sibling-chunk-card"
+                  :class="{ active: normalizeCode(item.chunkId) === normalizeCode(chunkDetail.chunk.chunkId) }"
                   type="button"
                   @click="openChunkDetail(item.chunkId)"
                 >
-                  <strong>C#{{ item.chunkNo || '-' }}</strong>
-                  <span>{{ buildSiblingOrderLabel(index, chunkDetail.siblingChunks.length) }}</span>
+                  <div class="sibling-chunk-head">
+                    <strong>子块 C#{{ item.chunkNo || '-' }}</strong>
+                    <span>{{ buildChunkRelationText(item) }}</span>
+                  </div>
+                  <p>{{ item.sectionPath || '未识别章节' }}</p>
+                  <span>{{ item.chunkText }}</span>
                 </button>
-                <div
-                  v-if="index < chunkDetail.siblingChunks.length - 1"
-                  class="chunk-relation-line"
-                  :class="{ active: isCurrentChunk(item) || isCurrentChunk(chunkDetail.siblingChunks[index + 1]) }"
-                ></div>
-              </template>
-            </div>
-            <div class="sibling-chunk-list">
-              <button
-                v-for="item in chunkDetail.siblingChunks"
-                :key="`sibling-${item.chunkId}`"
-                class="sibling-chunk-card"
-                :class="{ active: normalizeCode(item.chunkId) === normalizeCode(chunkDetail.chunk.chunkId) }"
-                type="button"
-                @click="openChunkDetail(item.chunkId)"
-              >
-                <div class="sibling-chunk-head">
-                  <strong>子块 C#{{ item.chunkNo || '-' }}</strong>
-                  <span>{{ buildChunkRelationText(item) }}</span>
-                </div>
-                <p>{{ item.sectionPath || '未识别章节' }}</p>
-                <span>{{ item.chunkText }}</span>
-              </button>
-            </div>
-          </section>
-        </template>
+              </div>
+            </section>
+          </template>
+        </div>
       </aside>
     </transition>
 
@@ -3554,6 +3556,12 @@ onBeforeUnmount(() => {
 
 .chunk-detail-drawer {
   width: min(720px, 100vw);
+}
+
+.chunk-detail-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .chunk-detail-section {
