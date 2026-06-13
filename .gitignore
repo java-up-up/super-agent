@@ -5,6 +5,10 @@ target/
 !**/src/test/**/target/
 logs/
 
+### Local Spring profiles / secrets ###
+**/src/main/resources/application-local.yml
+**/src/main/resources/application-local.yaml
+
 ### Agent ###
 cookasyncagent/
 **/dependency-reduced-pom.xml
@@ -48,3 +52,9 @@ CLAUDE.md
 AGENTS.md
 
 document
+
+### Others ###
+.project-guide
+.obsidian
+kb-sa
+tmp/
