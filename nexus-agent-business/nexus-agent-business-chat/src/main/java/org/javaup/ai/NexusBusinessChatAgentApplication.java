@@ -9,10 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author: 阿星不是程序员
  **/
 @SpringBootApplication
-public class SuperBusinessChatAgentApplication {
+public class NexusBusinessChatAgentApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SuperBusinessChatAgentApplication.class, args);
+        SpringApplication.run(NexusBusinessChatAgentApplication.class, args);
     }
 
 }
