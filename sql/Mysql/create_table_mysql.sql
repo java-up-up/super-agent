@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS super_agent_chat_dialogue (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_dialogue (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '业务会话编号',
     dialogue_stage TINYINT(1) NOT NULL DEFAULT '1' COMMENT '1:空闲 2:进行中',
@@ -9,12 +9,12 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_dialogue (
     edit_time DATETIME DEFAULT NULL COMMENT '编辑时间',
     status TINYINT(1) DEFAULT '1' COMMENT '1:正常 0:删除',
     PRIMARY KEY (id),
-    KEY idx_super_agent_chat_dialogue_code_status (dialogue_code, status),
-    KEY idx_super_agent_chat_dialogue_stage_status (dialogue_stage, status),
-    KEY idx_super_agent_chat_dialogue_edit_time (edit_time)
+    KEY idx_nexus_agent_chat_dialogue_code_status (dialogue_code, status),
+    KEY idx_nexus_agent_chat_dialogue_stage_status (dialogue_stage, status),
+    KEY idx_nexus_agent_chat_dialogue_edit_time (edit_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='业务对话归档主表';
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_exchange (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_exchange (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '所属业务会话编号',
     user_prompt TEXT NOT NULL COMMENT '用户提问',
@@ -32,12 +32,12 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_exchange (
     edit_time DATETIME DEFAULT NULL COMMENT '编辑时间',
     status TINYINT(1) DEFAULT '1' COMMENT '1:正常 0:删除',
     PRIMARY KEY (id),
-    KEY idx_super_agent_chat_exchange_dialogue_status (dialogue_code, status),
-    KEY idx_super_agent_chat_exchange_state_status (exchange_state, status),
-    KEY idx_super_agent_chat_exchange_create_time (create_time)
+    KEY idx_nexus_agent_chat_exchange_dialogue_status (dialogue_code, status),
+    KEY idx_nexus_agent_chat_exchange_state_status (exchange_state, status),
+    KEY idx_nexus_agent_chat_exchange_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='业务对话轮次归档表';
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_memory_summary (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_memory_summary (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '所属业务会话编号',
     covered_exchange_id BIGINT NOT NULL DEFAULT '0' COMMENT '长期摘要已覆盖到的最后一条exchangeId',
@@ -51,12 +51,12 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_memory_summary (
     edit_time DATETIME DEFAULT NULL COMMENT '编辑时间',
     status TINYINT(1) DEFAULT '1' COMMENT '1:正常 0:删除',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_super_agent_chat_memory_summary_dialogue (dialogue_code),
-    KEY idx_super_agent_chat_memory_summary_cover (covered_exchange_id),
-    KEY idx_super_agent_chat_memory_summary_edit_time (edit_time)
+    UNIQUE KEY uk_nexus_agent_chat_memory_summary_dialogue (dialogue_code),
+    KEY idx_nexus_agent_chat_memory_summary_cover (covered_exchange_id),
+    KEY idx_nexus_agent_chat_memory_summary_edit_time (edit_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='业务对话长期记忆摘要快照表';
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_exchange_trace_stage (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_exchange_trace_stage (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '所属业务会话编号',
     exchange_id BIGINT NOT NULL COMMENT '所属轮次id',
@@ -78,10 +78,10 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_exchange_trace_stage (
     edit_time DATETIME DEFAULT NULL COMMENT '编辑时间',
     status TINYINT(1) DEFAULT '1' COMMENT '1:正常 0:删除',
     PRIMARY KEY (id),
-    KEY idx_super_agent_chat_trace_exchange (exchange_id, stage_order),
-    KEY idx_super_agent_chat_trace_dialogue (dialogue_code, exchange_id),
-    KEY idx_super_agent_chat_trace_trace_id (trace_id),
-    KEY idx_super_agent_chat_trace_stage_code (stage_code)
+    KEY idx_nexus_agent_chat_trace_exchange (exchange_id, stage_order),
+    KEY idx_nexus_agent_chat_trace_dialogue (dialogue_code, exchange_id),
+    KEY idx_nexus_agent_chat_trace_trace_id (trace_id),
+    KEY idx_nexus_agent_chat_trace_stage_code (stage_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对话轮次执行阶段轨迹表';
 
 CREATE TABLE IF NOT EXISTS GRAPH_THREAD (
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS GRAPH_CHECKPOINT (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Spring AI Alibaba Graph checkpoint 表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document` (
     `id` bigint NOT NULL COMMENT '主键id',
     `document_name` varchar(255) NOT NULL COMMENT '文档名称',
     `original_file_name` varchar(255) NOT NULL COMMENT '原始文件名',
@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_strategy_plan` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_strategy_plan` (
     `id` bigint NOT NULL COMMENT '主键id',
     `document_id` bigint NOT NULL COMMENT '文档id',
     `plan_version` int NOT NULL DEFAULT '1' COMMENT '方案版本号',
@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_strategy_plan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档策略方案表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_strategy_step` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_strategy_step` (
     `id` bigint NOT NULL COMMENT '主键id',
     `plan_id` bigint NOT NULL COMMENT '方案id',
     `document_id` bigint NOT NULL COMMENT '文档id',
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_strategy_step` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档策略步骤表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_task` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_task` (
    `id` bigint NOT NULL COMMENT '主键id',
    `document_id` bigint NOT NULL COMMENT '文档id',
    `plan_id` bigint DEFAULT NULL COMMENT '执行方案id',
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档任务表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_task_log` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_task_log` (
    `id` bigint NOT NULL COMMENT '主键id',
    `task_id` bigint NOT NULL COMMENT '任务id',
    `document_id` bigint NOT NULL COMMENT '文档id',
@@ -234,7 +234,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_task_log` (
     KEY `idx_stage_type` (`stage_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档任务日志表';
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_structure_node` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_structure_node` (
    `id` bigint NOT NULL COMMENT '主键id',
    `document_id` bigint NOT NULL COMMENT '文档id',
    `parse_task_id` bigint NOT NULL COMMENT '解析任务id',
@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_structure_node` (
    KEY `idx_node_type` (`node_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档结构节点表';
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_parent_block` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_parent_block` (
    `id` bigint NOT NULL COMMENT '主键id',
    `document_id` bigint NOT NULL COMMENT '文档id',
    `task_id` bigint NOT NULL COMMENT '索引任务id',
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_parent_block` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档父块表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_chunk` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_chunk` (
     `id` bigint NOT NULL COMMENT '主键id',
     `document_id` bigint NOT NULL COMMENT '文档id',
     `task_id` bigint NOT NULL COMMENT '索引任务id',
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_chunk` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档切块表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_knowledge_scope_node` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_knowledge_scope_node` (
     `id` bigint NOT NULL COMMENT '主键id',
     `scope_code` varchar(64) NOT NULL COMMENT '知识范围编码',
     `scope_name` varchar(128) NOT NULL COMMENT '知识范围名称',
@@ -339,7 +339,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_knowledge_scope_node` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='知识范围节点表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_knowledge_topic_node` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_knowledge_topic_node` (
     `id` bigint NOT NULL COMMENT '主键id',
     `topic_code` varchar(64) NOT NULL COMMENT '主题编码',
     `topic_name` varchar(128) NOT NULL COMMENT '主题名称',
@@ -360,7 +360,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_knowledge_topic_node` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='知识主题节点表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_document_profile` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_document_profile` (
     `id` bigint NOT NULL COMMENT '主键id',
     `document_id` bigint NOT NULL COMMENT '文档id',
     `profile_version` int DEFAULT '1' COMMENT '画像版本',
@@ -386,7 +386,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_document_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档画像表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_topic_document_relation` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_topic_document_relation` (
     `id` bigint NOT NULL COMMENT '主键id',
     `topic_code` varchar(64) NOT NULL COMMENT '主题编码',
     `document_id` bigint NOT NULL COMMENT '文档id',
@@ -404,7 +404,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_topic_document_relation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='主题文档关联表';
 
 
-CREATE TABLE IF NOT EXISTS `super_agent_knowledge_route_trace` (
+CREATE TABLE IF NOT EXISTS `nexus_agent_knowledge_route_trace` (
     `id` bigint NOT NULL COMMENT '主键id',
     `conversation_id` varchar(64) DEFAULT NULL COMMENT '会话id',
     `exchange_id` bigint DEFAULT NULL COMMENT '轮次id',
@@ -430,7 +430,7 @@ CREATE TABLE IF NOT EXISTS `super_agent_knowledge_route_trace` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='知识路由影子追踪表';
 
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_retrieval_result (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_retrieval_result (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '所属业务会话编号',
     exchange_id BIGINT NOT NULL COMMENT '所属轮次id',
@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_retrieval_result (
     KEY idx_retrieval_result_document (document_id, chunk_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='检索结果快照表';
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_channel_execution (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_channel_execution (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '所属业务会话编号',
     exchange_id BIGINT NOT NULL COMMENT '所属轮次id',
@@ -497,7 +497,7 @@ CREATE TABLE IF NOT EXISTS super_agent_chat_channel_execution (
     KEY idx_channel_exec_channel (channel_type, execution_state)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='检索通道执行详情表';
 
-CREATE TABLE IF NOT EXISTS super_agent_chat_stage_benchmark (
+CREATE TABLE IF NOT EXISTS nexus_agent_chat_stage_benchmark (
     id BIGINT NOT NULL COMMENT '主键id',
     stage_code VARCHAR(64) NOT NULL COMMENT '阶段编码',
     execution_mode VARCHAR(32) NOT NULL COMMENT '执行模式：RAG_CHAT/REACT_AGENT',

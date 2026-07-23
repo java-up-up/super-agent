@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.javaup</groupId>
+        <artifactId>nexus-agent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>nexus-agent-business</artifactId>
+    <packaging>pom</packaging>
+
+    <name>nexus-agent-business</name>
+    <description>超级智能体的业务</description>
+
+    <modules>
+        <module>nexus-agent-business-chat</module>
+    </modules>
+</project>

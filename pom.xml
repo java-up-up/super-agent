@@ -4,20 +4,21 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.javaup</groupId>
-    <artifactId>super-agent-origin</artifactId>
+    <artifactId>nexus-agent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
     
-    <description>super-agent</description>
+    <description>nexus-agent</description>
     
     <modules>
         <module>ai-example</module>
-        <module>super-agent-business</module>
-        <module>super-agent-common</module>
-        <module>super-agent-id-generator-framework</module>
-        <module>super-agent-redisson-framework</module>
+        <module>nexus-agent-business</module>
+        <module>nexus-agent-common</module>
+        <module>nexus-agent-id-generator-framework</module>
+        <module>nexus-agent-redisson-framework</module>
+        <module>nexus-agent-redis-tool-framework</module>
     </modules>
     
     <properties>

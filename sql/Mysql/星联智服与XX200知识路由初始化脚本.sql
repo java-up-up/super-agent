@@ -11,7 +11,7 @@
   5. 执行本脚本。
 
   注意：
-  - 本脚本会更新 super_agent_document 的知识域编码、名称、业务分类和标签。
+  - 本脚本会更新 nexus_agent_document 的知识域编码、名称、业务分类和标签。
   - 本脚本会写入知识范围、知识主题、文档画像、主题文档关联。
   - 本脚本使用 INSERT ... ON DUPLICATE KEY UPDATE，可重复执行。
   - 本脚本不会修改文档解析、策略方案、索引状态、chunk、向量库数据。
@@ -30,7 +30,7 @@ SET @doc_xx200_id = 0;           -- TODO: 替换为“XX-200智能网关产品�
   如果你不确定文档 ID，可以先执行下面的查询，再把查出来的 id 填到上面变量里：
 
   SELECT id, document_name, original_file_name, index_status, last_index_task_id
-  FROM super_agent_document
+  FROM nexus_agent_document
   WHERE status = 1
     AND (
       document_name LIKE '%星联智服%'
@@ -60,7 +60,7 @@ SET @base_id = 8800041600000000000;
    2. 更新两份文档主表元数据
    ========================================================= */
 
-UPDATE super_agent_document
+UPDATE nexus_agent_document
 SET
     document_name = '星联智服全渠道客服平台上线与运营管理手册',
     knowledge_scope_code = @scope_customer_service_code,
@@ -71,7 +71,7 @@ SET
 WHERE id = @doc_customer_service_id
   AND status = 1;
 
-UPDATE super_agent_document
+UPDATE nexus_agent_document
 SET
     document_name = 'XX-200智能网关产品技术手册',
     knowledge_scope_code = @scope_xx200_code,
@@ -86,7 +86,7 @@ WHERE id = @doc_xx200_id
    3. 知识范围配置
    ========================================================= */
 
-INSERT INTO super_agent_knowledge_scope_node (
+INSERT INTO nexus_agent_knowledge_scope_node (
     id, scope_code, scope_name, parent_scope_code, description, aliases, examples, sort_order,
     create_time, edit_time, status
 )
@@ -129,7 +129,7 @@ ON DUPLICATE KEY UPDATE
    execution_preference 固定为 retrieval / graph_assist
    ========================================================= */
 
-INSERT INTO super_agent_knowledge_topic_node (
+INSERT INTO nexus_agent_knowledge_topic_node (
     id, topic_code, topic_name, scope_code, description, aliases, examples,
     answer_shape, execution_preference, sort_order,
     create_time, edit_time, status
@@ -308,7 +308,7 @@ ON DUPLICATE KEY UPDATE
    说明：如果系统已自动生成画像，这里会覆盖为更适合演示的手工画像。
    ========================================================= */
 
-INSERT INTO super_agent_document_profile (
+INSERT INTO nexus_agent_document_profile (
     id, document_id, profile_version, document_summary, document_type, core_topics, example_questions,
     graph_friendly, supports_graph_outline, supports_item_lookup, supports_graph_assist,
     profile_source, profile_status, error_msg,
@@ -364,7 +364,7 @@ ON DUPLICATE KEY UPDATE
    说明：先清理这些主题下的旧跨文档关联，再写入目标关联。
    ========================================================= */
 
-UPDATE super_agent_topic_document_relation
+UPDATE nexus_agent_topic_document_relation
 SET status = 0, edit_time = NOW()
 WHERE topic_code IN (
     'platform_go_live_process',
@@ -376,7 +376,7 @@ WHERE topic_code IN (
 )
 AND document_id <> @doc_customer_service_id;
 
-UPDATE super_agent_topic_document_relation
+UPDATE nexus_agent_topic_document_relation
 SET status = 0, edit_time = NOW()
 WHERE topic_code IN (
     'product_overview_spec',
@@ -388,7 +388,7 @@ WHERE topic_code IN (
 )
 AND document_id <> @doc_xx200_id;
 
-INSERT INTO super_agent_topic_document_relation (
+INSERT INTO nexus_agent_topic_document_relation (
     id, topic_code, document_id, relation_score, relation_source, reason,
     create_time, edit_time, status
 )
@@ -521,7 +521,7 @@ SELECT
     document_tags,
     index_status,
     last_index_task_id
-FROM super_agent_document
+FROM nexus_agent_document
 WHERE id IN (@doc_customer_service_id, @doc_xx200_id);
 
 SELECT
@@ -530,7 +530,7 @@ SELECT
     aliases,
     sort_order,
     status
-FROM super_agent_knowledge_scope_node
+FROM nexus_agent_knowledge_scope_node
 WHERE scope_code IN (@scope_customer_service_code, @scope_xx200_code)
 ORDER BY sort_order;
 
@@ -542,7 +542,7 @@ SELECT
     execution_preference,
     sort_order,
     status
-FROM super_agent_knowledge_topic_node
+FROM nexus_agent_knowledge_topic_node
 WHERE scope_code IN (@scope_customer_service_code, @scope_xx200_code)
 ORDER BY scope_code, sort_order;
 
@@ -555,9 +555,9 @@ SELECT
     r.relation_source,
     r.reason,
     r.status
-FROM super_agent_topic_document_relation r
-LEFT JOIN super_agent_knowledge_topic_node t ON t.topic_code = r.topic_code
-LEFT JOIN super_agent_document d ON d.id = r.document_id
+FROM nexus_agent_topic_document_relation r
+LEFT JOIN nexus_agent_knowledge_topic_node t ON t.topic_code = r.topic_code
+LEFT JOIN nexus_agent_document d ON d.id = r.document_id
 WHERE r.topic_code IN (
     'platform_go_live_process',
     'knowledge_governance',

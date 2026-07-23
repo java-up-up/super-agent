@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration status="WARN" monitorInterval="600">
+
+    <Properties>
+
+        <Property name="LOG_HOME">.</Property>
+        <Property name="PROJECT_NAME">nexus-agent-business-chat</Property>
+        <Property name="ENV">local</Property>
+        <Property name="FILE_NAME">log</Property>
+        <Property name="PATTERN">[nexus-agent-business-chat] %d{yyyy-MM-dd HH:mm:ss} %5p %c{1}:%L - %m%n</Property>
+        <Property name="ENCODING">UTF-8</Property>
+        <Property name="CUSTOM_MESSAGE_KEY">org.javaup</Property>
+    </Properties>
+
+    <Appenders>
+
+        <Console name="Console" target="SYSTEM_OUT">
+
+            <PatternLayout pattern="${PATTERN}"/>
+            <ThresholdFilter level="DEBUG"/>
+        </Console>
+
+        <RollingFile name="RollingFile" fileName="${LOG_HOME}/logs/${PROJECT_NAME}/${FILE_NAME}.log"
+                     filePattern="${LOG_HOME}/logs/${PROJECT_NAME}/$${date:yyyy-MM}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
+            <ThresholdFilter level="INFO"/>
+            <PatternLayout charset="${ENCODING}" pattern="${PATTERN}"/>
+            <Policies>
+
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <RollingFile name="RollingFileError" fileName="${LOG_HOME}/logs/${PROJECT_NAME}/${FILE_NAME}-error.log"
+                     filePattern="${LOG_HOME}/logs/${PROJECT_NAME}/$${date:yyyy-MM}/${FILE_NAME}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <ThresholdFilter level="ERROR"/>
+            <PatternLayout charset="${ENCODING}" pattern="${PATTERN}"/>
+            <Policies>
+
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+
+        <logger name="org.springframework.ai" level="DEBUG" additivity="true"/>
+        <logger name="org.springframework" level="INFO" additivity="true"/>
+        <logger name="org.mybatis" level="INFO" additivity="true"/>
+
+        <root level="INFO">
+            <appender-ref ref="Console"/>
+            <appender-ref ref="RollingFile"/>
+            <appender-ref ref="RollingFileError"/>
+        </root>
+    </Loggers>
+</Configuration>
