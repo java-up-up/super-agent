@@ -1,120 +1,96 @@
-**开源不易，还请您点个 Star 多谢！🎉**
+<p align="center">
+  <a href="https://javaup.chat/super-agent/overview/project-intro">
+    <img src="https://multimedia-javaup.cn/super-agent/structure/super-nexus-agent-banner.png" alt="Super Nexus Agent 企业级 AI 智能体项目" width="100%" />
+  </a>
+</p>
+<p align="center">
+  <strong>企业级多编排 Agent 项目</strong><br />
+  <span>从文档入库、知识路由、混合检索到证据生成、工具调用和可观测治理的完整闭环</span>
+</p>
 
-# Super Agent
 
-**Super Agent** 是一个 **企业级** 的 AI 智能体对话平台，覆盖了智能对话、文档知识问答、联网搜索、RAG 详细检索、MCP 工具协议、Skills 能力扩展、文档全生命周期管理等完整能力。
+
+<p align="center">
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-4a9b8f?style=flat-square" /></a>
+  <img alt="Java" src="https://img.shields.io/badge/Java-25%2B-df5b46?style=flat-square&logo=openjdk" />
+  <img alt="Maven" src="https://img.shields.io/badge/Maven-Multi--Module-cb3b32?style=flat-square&logo=apachemaven&logoColor=white" />
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42b883?style=flat-square&logo=vuedotjs&logoColor=white" />
+  <img alt="Agentic RAG" src="https://img.shields.io/badge/Agentic%20RAG-Enterprise-2d6a8a?style=flat-square" />
+  <img alt="ReAct Agent" src="https://img.shields.io/badge/ReAct%20Agent-Tool%20Calling-e87545?style=flat-square" />
+  <img alt="Hybrid Search" src="https://img.shields.io/badge/Hybrid%20Search-RRF%20Fusion-7c6ee6?style=flat-square" />
+  <img alt="Knowledge Graph" src="https://img.shields.io/badge/Knowledge%20Graph-Neo4j-4581c3?style=flat-square&logo=neo4j&logoColor=white" />
+  <img alt="Eval Harness" src="https://img.shields.io/badge/Eval%20Harness-Quality%20Trace-8a63d2?style=flat-square" />
+  <img alt="Observability" src="https://img.shields.io/badge/Observability-Tracing-2f855a?style=flat-square" />
+  <img alt="MCP" src="https://img.shields.io/badge/MCP-Tool%20Protocol-4f6bed?style=flat-square" />
+  <img alt="Skills" src="https://img.shields.io/badge/Skills-Extensible-b56e7a?style=flat-square" />
+</p>
+
+<p align="center">
+  <a href="https://javaup.chat/super-agent/overview/project-intro"><strong>官网文档</strong></a>
+  ·
+  <a href="http://super-agent-javaup.chat"><strong>在线体验</strong></a>
+  ·
+  <a href="https://javaup.chat/super-agent/getting-started/prerequisites"><strong>快速启动</strong></a>
+  ·
+  <a href="https://javaup.chat/super-agent/overview/core-architecture"><strong>核心架构</strong></a>
+  ·
+  <a href="https://javaup.chat/super-agent/overview/resume-template"><strong>简历写法</strong></a>
+</p>
+
+<p align="center">
+  <strong>开源不易，如果这个项目对你有帮助，欢迎给 <a href="https://github.com/java-up-up/super-agent">Super Nexus Agent</a> 点一个 Star。</strong>
+</p>
+# Nexus Agent 是什么？
+
+**Nexus Agent** 是一个 **企业级** 的 AI 智能体对话平台，覆盖智能对话、文档知识问答、联网搜索、RAG 检索、MCP 工具协议、Skills 能力扩展、Harness 工程化控制、会话记忆管理、等完整能力。
 
 项目从对话入口开始，到意图分析、检索决策、多路知识召回、证据驱动生成，再到会话记忆管理、MCP 外部工具集成和文档治理，**每一个环节都不是简单调个接口就完事的，而是经过深度设计和反复打磨的工程化实现**。
 
-- **Super Agent 在线体验：** [👉 点击进行体验](http://super-agent-javaup.chat)
-
-- **Super Agent 详细讲解：** [👉 点击查看讲解](https://www.javaup.chat/super-agent/overview/project-intro)
-
-# 为什么需要这个项目
-
-现在的 Java 面试，光靠八股文和 CRUD 项目已经越来越难了。微服务、高并发这些之前算是亮点的东西，现在也慢慢成了标配。面试官开始问：**RAG 是什么？Agent 怎么实现的？会话记忆怎么设计？向量检索用的什么方案？你做过文档问答吗？** 这些问题已经从加分项变成了必答题。
-
-但问题是，大多数人学 AI 的方式是跟着教程调一下 API，往向量库里塞点数据，让模型输出一段话——结束了。这顶多算跑通了一个 Demo，面试官一追问就露馅。**真正的 AI 应用和调 API 之间，差的不是代码量，是对每个环节的深入理解和工程化设计。**
-
-而 Super Agent 就是为了解决这个问题：它覆盖了 **Agent 智能体、RAG 检索增强生成、MCP 工具协议、Skills 能力扩展、会话记忆管理、文档生命周期治理** 这些 AI 应用层的核心技术，每一块都有完整的设计和代码实现，复杂度对标真实企业级系统。不管是学生还是工作了几年的同学，学完之后面试中都能真正聊得起来，而且聊得有深度。
-
-#### 对话界面：
-
 <img src="https://multimedia-javaup.cn/super-agent/screenshot/%E6%96%B0%E7%9A%84%E5%AF%B9%E8%AF%9D.png" width="100%" />
 
-# 学 AI 容易踩的坑
+# 快速导航
 
-很多人觉得自己"会 RAG 了"、"懂 Agent 了"，但面试一深入就露馅。在正式介绍项目之前，先把几个常见误区理清楚。
+| 入口 | 链接 | 说明 |
+| :--- | :--- | :--- |
+| 官网文档 | [Nexus Agent 项目介绍](https://javaup.chat/super-agent/overview/project-intro) | 完整项目介绍和学习路线 |
+| 核心架构 | [查看架构设计](https://javaup.chat/super-agent/overview/core-architecture) | 了解对话、检索、工具、文档治理链路 |
+| 快速启动 | [准备项目启动条件](https://javaup.chat/super-agent/getting-started/prerequisites) | 本地启动前后端和中间件 |
 
-## 调个 API 不等于会 RAG
+# 项目核心亮点
 
-很多教程的套路是：调一下 Embedding 接口，往向量数据库里塞点数据，再用大模型生成答案——完事了。这顶多算跑通了一个 Demo。
-
-真正的 RAG 系统要考虑的问题多得多：文档怎么切分效果最好？检索召回率不够怎么办？多路召回怎么融合排序？幻觉怎么控制？这些才是面试官会追问的点。跑通 Demo 和做出能上线的系统之间，差的不是代码量，是对每个环节的深入理解。
-
-## RAG 不只是"检索 + 生成"两步走
-
-`Retrieval-Augmented Generation` 这个名字容易让人觉得就是检索加生成。但实际工程中，一个能用的 RAG 系统至少涉及这些环节：
-
-- **数据处理**：PDF、Word、PPT，格式五花八门，光是解析成干净文本就是一堆脏活
-- **分块策略**：切太大检索不精准，切太小上下文丢失。不同文档可能需要不同策略
-- **问题改写**：用户问"那它怎么配置？"，不补上下文系统根本不知道在问啥
-- **检索策略**：纯向量检索对精确匹配很弱，用户问一个订单号，向量检索可能完全找不到。混合检索怎么融合、要不要重排序，都是取舍
-- **会话记忆**：20 轮对话全塞给模型？Token 成本扛不住。只带最近几轮？可能丢关键上下文
-
-每一环都有坑，每一环都值得深挖。面试的时候能把这些讲清楚，比背概念有用得多。
-
-## 只关注模型，忽略工程能力
-
-RAG 项目的核心竞争力不在于你用了多强的模型，而在于工程化能力。同样的模型，检索策略不同、Prompt 设计不同、分块粒度不同，最终效果可以天差地别。
-
-举个例子：用户问 **"打印机墨盒怎么换"**，文档里写的是 **"墨盒更换步骤"**。关键词搜索直接匹配不上，但向量检索能理解它们是一回事。**这背后是 Embedding 模型的选型、向量数据库的调优、检索结果的重排序——每一步都是工程决策**，不是换个更贵的模型就能解决的。
-
-## 用框架套一套不等于企业级
-
-Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
-
-执行器路由、前置编排器五步决策链、双通道检索融合、Parent-Child 块聚合、证据预算控制与无证据短路、组合式切块引擎、摘要压缩记忆、集群级租约互斥、全链路观测追踪。这些构成项目核心竞争力的能力，这些框架并不具备的能力，在此项目中全都有实现。
-
-![图片](https://multimedia-javaup.cn/super-agent/framework/%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE%28jpg%29.jpg)
-
-# 系统架构总览
-
-在展开每个模块之前，先用一张结构图建立全局认知。Super Agent 不是单点能力堆叠，而是围绕 **对话编排中心、三层执行器、知识底座、检索证据、工具扩展、工程化护栏** 这几块协同工作的完整体系：
-
-<img src="https://multimedia-javaup.cn/super-agent/structure/super-agent-architecture-overview.png" width="100%" />
-
-从图里可以看到，用户入口并不会直接把问题扔给模型，而是先进入对话编排中心做记忆加载、问题改写、子问题拆分和歧义澄清，再根据场景分发到歧义追问、RAG 知识问答或 ReAct Agent。底层的 PGVector、Elasticsearch、Neo4j、Redis、Kafka、MinIO、Tika 等组件并不是孤立存在，而是共同支撑知识构建、检索增强、工具调用和全链路观测。
-
-# 这个项目能学到什么
-
-先直接列出来，小伙伴心里有数：
-
-- **ReAct Agent 智能体的完整实现：不只是能聊天，而是支持联网搜索、工具调用、多步推理、Checkpoint 持久化，真正能自主决策和行动的 Agent**
-
-- **三层执行器体系：系统不是把所有问题都交给 Agent，而是先做确定性编排，再按场景选最合适的回答引擎（歧义追问 / 知识问答 / 开放式 Agent），这套分层调度机制是整个系统的核心竞争力**
-
-- **Neo4j 图数据库驱动的文档结构图谱：每份文档在索引构建时，会同步在 Neo4j 中生成 Document → Section → Item 的层级图结构，支持章节编号定位、邻接遍历、子节点展开等图查询，让检索不再只靠向量匹配，还能沿着文档结构精准导航**
-
-- **知识路由三级漏斗：用户提问后，系统不是直接全库检索，而是先走一轮 Scope → Topic → Document 的三级排序漏斗，通过语义 + 词法 + 关键词实体的混合打分，自动锁定最相关的文档，再进入检索链路。路由置信度不够时会主动降级，不会硬猜**
-
-- **影子路由质量观测：当用户手动选择文档时，系统在后台静默跑一遍完整的知识路由，对比"系统会选什么"和"用户实际选了什么"，把命中率、置信度、候选排名等数据全部记录下来，用于持续评估和优化路由模型，整个过程对用户完全无感**
-
-- **RAG 前置编排引擎：路由判定、问题改写、子问题拆分、知识域收缩、歧义澄清，在模型回答之前把所有决策做完，确保每一次检索都是精准的**
-
-- **双通道混合检索：向量检索 和 关键词检索 并行执行，RRF 融合排序，可选外部 Rerank 精排，召回率和精准度兼顾**
-
-- **证据预算控制与无证据短路：模型上下文窗口有限，多子问题的证据量需要严格裁剪；没有找到相关证据时直接告知用户，不让模型凭空编造，从架构层面杜绝幻觉**
-
-- **Parent-Child 块聚合：检索粒度用 Child 小块保证命中率，回答阶段通过聚合提升到 Parent 大块，保证上下文完整性。这个设计在业界也属于比较前沿的实践**
-
-- **三种会话记忆策略：无记忆、滑动窗口、摘要压缩，生产环境下怎么平衡 Token 成本和上下文完整性，三种方案都有完整实现和对比演示**
-
-- **MCP 工具协议集成：基于 Model Context Protocol 标准协议，Agent 可以动态发现和调用外部工具，不再局限于硬编码的 Function Call，真正实现了工具能力的即插即用**
-
-- **Skills 能力扩展体系：通过 SKILL.md 配置文件声明式定义技能，支持目录结构化管理、自动加载、引用脚本和参考资料，让 Agent 的能力边界可以持续扩展而不需要改动核心代码**
-
-- **文档从上传到可检索的完整链路：Tika 多格式解析、四种切块策略组合流水线、向量化、向量数据库 + 倒排数据库 双引擎索引，每一步都有独立的任务日志和状态追踪**
-
-- **组合式切块引擎：—结构切块做主干、递归分块做兜底、语义分块做边界优化、LLM 智能切块处理疑难文档，系统按文档类型自动推荐最优策略组合**
-
-- **联网搜索与工具调用：集成 Tavily 搜索，支持工具重试、指数退避、异常兜底，模型调用次数和工具调用次数都有 Hook 限制，防止资源滥用和死循环**
-
-- **推荐追问问题生成：主回答完成后额外调用模型，生成最多 3 个可继续追问的问题，引导用户深入探索**
-
-- **SSE 流式输出协议：正文分片实时推送，结束时补发引用来源和推荐问题，支持主动停止生成，用户体验对标主流 AI 产品**
-
-#### 能力结构图：
+- **ReAct Agent 智能体的完整实现**：不只是能聊天，而是支持联网搜索、工具调用、多步推理、Checkpoint 持久化，真正能自主决策和行动的 Agent。
+- **三层执行器体系**：系统不是把所有问题都交给 Agent，而是先做确定性编排，再按场景选择歧义追问、知识问答或开放式 Agent。
+- **Neo4j 文档结构图谱**：每份文档在索引构建时生成 Document -> Section -> Item 层级图结构，支持章节定位、邻接遍历和结构化导航。
+- **知识路由三级漏斗**：用户提问后先走 Scope -> Topic -> Document 三级排序漏斗，自动锁定最相关的知识范围，再进入检索链路。
+- **影子路由质量观测**：用户手动选择文档时，系统在后台静默运行知识路由，对比系统推荐和用户实际选择，用于持续评估和优化路由质量。
+- **RAG 前置编排引擎**：路由判定、问题改写、子问题拆分、知识域收缩、歧义澄清，在模型回答前先把检索计划做好。
+- **双通道混合检索**：向量检索和关键词检索并行执行，RRF 融合排序，可选外部 Rerank 精排，召回率和精准度兼顾。
+- **证据预算控制与无证据短路**：多子问题证据需要严格裁剪；没有找到相关证据时直接告知用户，不让模型凭空编造。
+- **Parent-Child 块聚合**：检索粒度用 Child 小块保证命中率，回答阶段聚合到 Parent 大块保证上下文完整性。
+- **三种会话记忆策略**：无记忆、滑动窗口、摘要压缩，完整展示生产环境下如何平衡 Token 成本和上下文完整性。
+- **MCP 工具协议集成**：Agent 可以动态发现和调用外部工具，不再局限于硬编码 Function Call。
+- **Skills 能力扩展体系**：通过 `SKILL.md` 声明式定义技能，支持目录化管理、自动加载、引用脚本和参考资料。
+- **文档从上传到可检索的完整链路**：Tika 多格式解析、组合式切块、向量化、向量数据库 + 倒排索引双引擎构建，每一步都有任务日志。
+- **组合式切块引擎**：结构切块做主干、递归分块做兜底、语义分块做边界优化、LLM 智能切块处理疑难文档。
+- **联网搜索与工具调用保护**：集成 Tavily 搜索，支持工具重试、指数退避、异常兜底，模型调用和工具调用都有 Hook 限制。
+- **推荐追问问题生成**：主回答完成后额外生成最多 3 个可继续追问的问题，引导用户深入探索。
+- **SSE 流式输出协议**：正文分片实时推送，结束时补发引用来源和推荐问题，支持主动停止生成。
 
 <img src="https://multimedia-javaup.cn/super-agent/structure/super-agent-capacity.png" width="100%" />
 
 前端层负责会话执行和运营控制台，接口与流式层负责请求、SSE、鉴权和中断控制，核心链路串起会话记忆、Query 改写、知识路由、图谱导航、多通道检索和 Prompt 组装。
 
-底层再由 MySQL、PGVector、Elasticsearch、Neo4j、Redis、Kafka、MinIO、Tika 等基础设施共同提供能力。也就是说，项目亮点不是只在某个单独 Agen 里，而是分布在整条 AI 应用链路上。
+底层再由 MySQL、PGVector、Elasticsearch、Neo4j、Redis、Kafka、MinIO、Tika 等基础设施共同提供能力。也就是说，项目亮点不是只在某个单独 Agent 里，而是分布在整条 AI 应用链路上。
+
+# 核心架构
+
+Nexus Agent 不是单点能力堆叠，而是围绕 **对话编排中心、三层执行器、知识底座、检索证据、工具扩展、工程化护栏** 这几块协同工作的完整体系：
+
+<img src="https://multimedia-javaup.cn/super-agent/structure/super-agent-architecture-overview.png" width="100%" />
 
 # 系统整体是怎么跑的
 
-用户在输入框里敲了一句话，点了发送。看起来很简单，但在 Super Agent 内部，这条消息要经过一条远比你想象中复杂的链路，才能变成一个靠谱的回答。
+用户在输入框里敲了一句话，点了发送。看起来很简单，但在 Nexus Agent 内部，这条消息要经过一条远比你想象中复杂的链路，才能变成一个靠谱的回答。
 
 先看对话执行链路，后面再逐块拆解每个环节的设计细节：
 
@@ -122,9 +98,36 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 
 核心思路是：**不是让 Agent 自己决定所有事情，而是先用确定性的编排逻辑做好决策，再把执行交给最合适的引擎。** 知识问答走稳定的证据驱动生成，开放式问题才走 Agent 自由探索。
 
-# Agent 这块是怎么设计的
+# 为什么需要这个项目？
 
-面试中聊 Agent，面试官不想听你说"我用了 ReactAgent"，他想听的是你对这些问题的思考：
+大多数人学 AI 的方式是跟着教程调一下 API，往向量库里塞点数据，让模型输出一段话——结束了。这顶多算跑通了一个 Demo，一旦追究细节就露馅了。**真正的 AI 应用和调 API 之间，差的不是代码量，是对每个环节的深入理解和工程化设计。**
+
+而此项目就是为了解决这个问题：它覆盖了 **Agent 智能体、RAG 检索增强生成、MCP 工具协议、Skills 能力扩展、会话记忆管理、Harness 工程化控制、文档生命周期治理** 这些 AI 应用层的核心技术，每一块都有完整的设计和代码实现，复杂度对标真实企业级系统。
+
+
+### 调个 API 不等于会 RAG
+
+很多教程的套路是：调一下 Embedding 接口，往向量数据库里塞点数据，再用大模型生成答案——完事了。这顶多算跑通了一个 Demo。
+
+真正的 RAG 系统要考虑的问题多得多：文档怎么切分效果最好？检索召回率不够怎么办？多路召回怎么融合排序？幻觉怎么控制？这些才是面试官会追问的点。跑通 Demo 和做出能上线的系统之间，差的不是代码量，是对每个环节的深入理解。
+
+### RAG 并不简单
+
+一个能用的 RAG 系统至少涉及问题改写、子问题拆分、知识域收缩、混合检索、父子块聚合、引用来源、无证据短路和会话记忆。每一环都会影响最终效果。
+
+### 只关注模型，忽略工程能力
+
+RAG 项目的核心竞争力不在于你用了多强的模型，而在于工程化能力。同样的模型，检索策略不同、Prompt 设计不同、分块粒度不同，最终效果可以天差地别。
+
+举个例子：用户问 **"打印机墨盒怎么换"**，文档里写的是 **"墨盒更换步骤"**。关键词搜索直接匹配不上，但向量检索能理解它们是一回事。**这背后是 Embedding 模型的选型、向量数据库的调优、检索结果的重排序——每一步都是工程决策**，不是换个更贵的模型就能解决的。
+
+### 用框架套一下不等于企业级
+
+执行器路由、前置编排器五步决策链、双通道检索融合、Parent-Child 块聚合、证据预算控制与无证据短路、组合式切块引擎、摘要压缩记忆、集群级租约互斥、全链路观测追踪。这些构成项目核心竞争力的能力，这些框架并不具备的能力，在此项目中全都有实现。
+
+<img src="https://multimedia-javaup.cn/super-agent/framework/%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE%28jpg%29.jpg" width="100%" />
+
+# 核心设计拆解
 
 - **用户提了一个问题，系统是怎么决定用哪种方式来回答的？** 不是让模型自己选，而是先经过路由判定、问题改写、歧义检测这一整轮编排，最后才决定走哪个执行器。判断顺序是：歧义澄清 > 知识问答 > 开放式 Agent
 
@@ -138,17 +141,15 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 
 - **并行工具执行怎么做？** ReactAgent 配置了 parallelToolExecution，最多 4 个工具并行执行
 
-这些设计在代码里都能找到对应实现，不是概念上的东西。
-
 <img src="https://multimedia-javaup.cn/super-agent/flow-chart/%E5%9B%BE%E4%B8%89%EF%BC%9AReAct%20Agent%20%E6%89%A7%E8%A1%8C.svg" width="60%" />
 
-## 三层执行器：不是所有问题都该交给 Agent
+# 三层执行器：不是所有问题都该交给 Agent
 
 知识问答追求"稳"和"可解释"——用户问"退款规则是什么"，你需要的是从文档中精准检索证据，然后让模型基于证据生成回答。这种场景让 Agent 自己探索反而容易不可控，可能跑去联网搜索一堆无关内容。
 
 而"今天北京天气怎么样"这种问题，知识库里根本没有答案，必须让 Agent 调用搜索工具去获取实时信息。
 
-**所以 Super Agent 设计了三层执行器，按场景精准分流：**
+**所以 Nexus Agent 设计了三层执行器，按场景精准分流：**
 
 | 执行器             | 触发条件                           | 处理方式                           |
 | :----------------- | :--------------------------------- | :--------------------------------- |
@@ -223,7 +224,7 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 
 ## 双通道并行检索
 
-用户问一个订单号、一个配置项名，向量检索很可能找不到——语义相似度对精确匹配天然弱势。所以 Super Agent 用了双通道并行：**向量检索 + 关键词检索**，两路同时出发，互不阻塞。
+用户问一个订单号、一个配置项名，向量检索很可能找不到——语义相似度对精确匹配天然弱势。所以 Super Nexus Agent 用了双通道并行：**向量检索 + 关键词检索**，两路同时出发，互不阻塞。
 
 两路结果的分数量纲完全不同，不能直接比大小。系统用 **RRF（Reciprocal Rank Fusion）** 按排名倒数法融合，向量通道设了最低相似度阈值，关键词通道用相对阈值，低于阈值的弱命中直接过滤。融合后还可以接**外部 Rerank 精排**，在较干净的候选集上继续优化排序。
 
@@ -235,7 +236,7 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 
 # 文档从上传到可检索经历了什么
 
-很多项目的文档处理就是"切成固定长度 → 向量化 → 完事"。但实际上不同文档差异很大，一刀切的效果很难达到想要的效果。Super Agent 的文档处理不是一条孤立的入库流水线，而是 **文档入库 → 组合切块 → 双引擎索引 → Neo4j 图谱 → 三级知识路由 → 混合检索 → 证据生成 → 影子路由观测** 的知识闭环：
+很多项目的文档处理就是"切成固定长度 → 向量化 → 完事"。但实际上不同文档差异很大，一刀切的效果很难达到想要的效果。Super Nexus Agent 的文档处理不是一条孤立的入库流水线，而是 **文档入库 → 组合切块 → 双引擎索引 → Neo4j 图谱 → 三级知识路由 → 混合检索 → 证据生成 → 影子路由观测** 的知识闭环：
 
 <img src="https://multimedia-javaup.cn/super-agent/structure/super-agent-knowledge-closed-loop.png" width="100%" />
 
@@ -293,23 +294,9 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 - 最近原文窗口最大 2200 字符，长期摘要最大 1400 字符
 - 所有记忆数据持久化到 MySQL，应用重启不丢失
 
-# MCP 工具协议与 Skills 能力扩展
+# Skills 能力扩展
 
-Agent 的价值不只是能聊天，更在于能**调用外部工具完成实际任务**。Super Agent 在工具集成这块做了两层设计：
-
-## MCP 工具协议
-
-MCP（Model Context Protocol）是 Anthropic 提出的开放协议标准，定义了模型与外部工具之间的通信规范。Super Agent 基于 MCP 协议实现了完整的工具调用链路：
-
-- **动态工具发现**：Agent 启动时自动扫描并注册可用的 MCP 工具，不需要硬编码工具列表
-- **标准化通信**：工具的输入输出遵循 MCP 协议规范，支持 Stdio 和 SSE 两种传输模式，兼容主流 MCP Server 生态
-- **参数自动提取**：模型根据用户意图自动识别需要调用的工具并提取参数，无需用户手动指定
-- **多工具编排**：单次对话中可以串联调用多个 MCP 工具，前一个工具的输出可以作为后一个工具的输入
-- **安全沙箱**：工具调用在受控环境中执行，有超时限制和异常隔离，防止恶意工具影响主流程
-
-相比传统的 Function Call 硬编码方式，MCP 协议的优势在于**标准化和可扩展性**——新增一个工具不需要改任何业务代码，只需要部署一个符合 MCP 协议的 Server 即可。
-
-## Skills 能力扩展
+Agent 的价值不只是能聊天，更在于能**调用外部工具完成实际任务**。
 
 Skills 是比 MCP 更上层的能力抽象，解决的是"Agent 怎么获得特定领域的专业能力"这个问题：
 
@@ -323,15 +310,7 @@ Skills 体系让 Agent 的能力边界不再是固定的，而是可以**持续�
 
 # 工程质量不是靠嘴说的
 
-说一个项目是企业级，得看实际的工程质量。从几个维度来评估 Super Agent：
-
-## 工程规范
-
-- **分层架构**：business / common / framework 三层职责清晰，AI 业务逻辑、通用 Web 能力、基础设施组件互不耦合
-- **统一异常处理**：全局异常拦截 + 统一响应格式 ApiResponse，业务代码不需要到处 try-catch
-- **自动装配机制**：基础组件通过 Spring Boot Starter 方式封装，引入依赖即可使用，零配置代码
-- **MyBatis-Plus 自动填充**：创建时间、更新时间等公共字段自动处理，不需要每个 Mapper 手动设置
-- **API 文档规范**：Knife4j 增强的 Swagger 文档，接口定义即文档
+说一个项目是企业级，得看实际的工程质量。从几个维度来评估 Nexus Agent：
 
 ## 集群安全与并发控制
 
@@ -342,35 +321,9 @@ Skills 体系让 Agent 的能力边界不再是固定的，而是可以**持续�
 - **租约续期**：执行过程中自动续期，防止长对话超时导致锁释放后被其他实例抢占
 - **优雅降级**：无论成功还是失败，统一触发清理流程，不会留下孤儿锁
 
-## 设计模式实战
-
-项目中落地了多种经典设计模式，不是为了用模式而用，每个都解决了实际的扩展性或解耦问题：
-
-| 设计模式 | 应用场景 | 解决的问题 |
-| :--- | :--- | :--- |
-| 策略模式 | 三种会话记忆策略、四种切块策略 | 不同策略可插拔替换，新增策略不改已有代码 |
-| 工厂模式 | 检索通道创建、切块器创建 | 复杂对象的创建逻辑集中管理 |
-| 模板方法 | 文档处理流水线各节点 | 统一执行流程，子类只关注核心逻辑 |
-| 责任链模式 | RAG 前置编排器的五步决策链 | 多个处理步骤按顺序串联，灵活组合 |
-| 观察者模式 | SSE 流式输出回调 | 流式事件的异步通知与推送 |
-| AOP | 重复执行限制、全局异常拦截 | 横切关注点与业务代码解耦 |
-
-## 可扩展性
-
-核心模块都预留了扩展点：
-
-- **新增检索通道**：实现检索通道接口，注册为 Spring Bean，自动参与双通道检索
-- **新增切块策略**：实现切块策略接口，可加入组合流水线的任意位置
-- **新增记忆策略**：实现记忆策略接口，系统自动识别并可配置使用
-- **新增工具调用**：给 ReactAgent 注册新的 Tool，自动参与工具选择
-- **新增 MCP Server**：部署符合 MCP 协议的 Server，Agent 自动发现并注册
-- **新增 Skill**：在 Skills 目录下放入 SKILL.md 配置文件，零配置即刻生效
-
-不需要改框架代码，加个实现类或配置文件就完事了。这才是面向接口编程和插件化架构的正确打开方式。
-
 ## 全链路可观测
 
-基于 AOP 的全链路追踪，每个环节的耗时、输入输出、决策结果都有记录。思考过程、检索通道使用情况、证据来源、工具调用记录——全部可视化呈现在管理后台的观测面板中。出了问题不用猜，直接看 Trace 就知道哪一步出了问题。
+全链路追踪，每个环节的耗时、输入输出、决策结果都有记录。思考过程、检索通道使用情况、证据来源、工具调用记录——全部可视化呈现在管理后台的观测面板中。出了问题不用猜，直接看 Trace 就知道哪一步出了问题。
 
 #### 执行阶段时间线：
 
@@ -378,94 +331,35 @@ Skills 体系让 Agent 的能力边界不再是固定的，而是可以**持续�
 
 # 和其他普通的 Agent 项目有什么区别
 
-市面上大多数 Agent 项目，说白了就是跑通一个示例就完事了。Super Agent 和这些项目的差距在哪？直接对比一下：
+市面上大多数 Agent 项目，说白了就是跑通一个示例就完事了。Super Nexus Agent 和这些项目的差距在哪？直接对比一下：
 
-| 对比维度   | 普通 RAG 项目           | Super Agent                                          |
-| :--------- |:--------------------| :--------------------------------------------------- |
-| 检索方式   | 单路向量检索              | 双通道并行（PGVector + ES）+ RRF 融合 + 可选 Rerank  |
-| 问题处理   | 原始问题直接检索            | 改写 + 子问题拆分 + 知识域收缩                       |
-| 意图判断   | 无                   | 前置编排器五步决策 + 歧义主动追问                    |
-| 执行策略   | 所有问题走同一个模型          | 三层执行器按场景分流（追问 / 知识问答 / Agent）      |
-| 会话记忆   | 全量塞给模型或不带           | 无记忆 / 滑动窗口 / 摘要压缩三种策略                 |
-| 文档切块   | 固定长度一刀切             | 四种策略组合流水线 + 系统自动推荐                    |
-| 文档入库   | 同步处理，无日志            | Kafka 异步流水线 + 分步骤任务日志                    |
-| Agent 能力 | 无或仅简单对话             | ReAct 循环 + 联网搜索 + 工具调用 + Checkpoint 持久化 |
-| 证据控制   | 无                   | 预算裁剪 + 无证据短路防幻觉                          |
-| 检索粒度   | 命中什么用什么             | Parent-Child 块聚合，检索用小块、回答用大块          |
-| 流式输出   | 简单 SSE 推文本          | 正文 + 引用来源 + 推荐追问 + 停止生成                |
-| Agent 安全 | 无限制                 | 模型调用次数 Hook + 工具调用次数 Hook + 重试兜底     |
-| MCP 协议   | 无或硬编码 Function Call | MCP 标准协议 + 动态发现 + 多工具编排 + 安全沙箱      |
-| 能力扩展   | 固定能力，改代码才能加         | Skills 声明式定义 + 自动加载 + 热插拔扩展            |
-| 集群安全   | 单机运行                | Redis 租约互斥 + JVM 任务注册 + 租约续期             |
-| 可观测性   | 无                   | 全链路 Trace + 可视化观测面板                        |
-| 知识路由   | 无，全库检索              | 三级漏斗（Scope → Topic → Document）+ 混合打分自动锁定文档 |
-| 文档结构   | 无                   | Neo4j 图数据库构建 Document → Section → Item 层级图谱 |
-| 路由质量观测 | 无                  | 影子路由静默对比 + 命中率追踪 + 持续优化闭环          |
+| 对比维度     | 普通 Agent 项目          | Super Nexus Agent                                          |
+| :----------- | :----------------------- | :--------------------------------------------------------- |
+| 检索方式     | 单路向量检索             | 双通道并行（PGVector + ES）+ RRF 融合 + 可选 Rerank        |
+| 问题处理     | 原始问题直接检索         | 改写 + 子问题拆分 + 知识域收缩                             |
+| 意图判断     | 无                       | 前置编排器五步决策 + 歧义主动追问                          |
+| 执行策略     | 所有问题走同一个模型     | 三层执行器按场景分流（追问 / 知识问答 / Agent）            |
+| 会话记忆     | 全量塞给模型或不带       | 无记忆 / 滑动窗口 / 摘要压缩三种策略                       |
+| 文档切块     | 固定长度一刀切           | 四种策略组合流水线 + 系统自动推荐                          |
+| 文档入库     | 同步处理，无日志         | Kafka 异步流水线 + 分步骤任务日志                          |
+| Agent 能力   | 无或仅简单对话           | ReAct 循环 + 联网搜索 + 工具调用 + Checkpoint 持久化       |
+| 证据控制     | 无                       | 预算裁剪 + 无证据短路防幻觉                                |
+| 检索粒度     | 命中什么用什么           | Parent-Child 块聚合，检索用小块、回答用大块                |
+| 流式输出     | 简单 SSE 推文本          | 正文 + 引用来源 + 推荐追问 + 停止生成                      |
+| Agent 安全   | 无限制                   | 模型调用次数 Hook + 工具调用次数 Hook + 重试兜底           |
+| MCP 协议     | 无或硬编码 Function Call | MCP 标准协议 + 动态发现 + 多工具编排 + 安全沙箱            |
+| 能力扩展     | 固定能力，改代码才能加   | Skills 声明式定义 + 自动加载 + 热插拔扩展                  |
+| 集群安全     | 单机运行                 | Redis 租约互斥 + JVM 任务注册 + 租约续期                   |
+| 可观测性     | 无                       | 全链路 Trace + 可视化观测面板                              |
+| 知识路由     | 无，全库检索             | 三级漏斗（Scope → Topic → Document）+ 混合打分自动锁定文档 |
+| 文档结构     | 无                       | Neo4j 图数据库构建 Document → Section → Item 层级图谱      |
+| 路由质量观测 | 无                       | 影子路由静默对比 + 命中率追踪 + 持续优化闭环               |
 
 一句话：**每个环节都不是调个 API 就完事的，而是有完整的设计和工程考量。**
 
-# 适合什么人
+## 适合什么人？
 
-## 在校生 / 校招同学：
-
-- 简历上已经有了商城、外卖等常规项目，需要一个有区分度的项目来拉开差距。Super Agent 能让你在面试中聊 AI + 工程化，而不是千篇一律的 CRUD
-- 想转 AI 应用方向但不想从 Python 入手。项目基于 Java 技术栈，学习曲线平滑
-- 大厂校招越来越看重候选人对新技术的敏感度，简历上有 AI 项目经验，能直接证明学习能力和技术视野
-
-## 社招同学：
-
-- 1-3 年经验：日常写业务代码，想往 AI 方向转型但不知道从哪下手。技术栈你都熟悉，学的是 AI 应用层的东西，上手快
-- 3-5 年经验：技术能力不差，但面试被问到 AI 相关问题答不上来，少了一个谈薪筹码。通过项目补上 RAG、Agent 这些知识点，面试时能聊得有深度
-- 想跳槽到 AI 团队：越来越多的 JD 要求有 AI 相关经验，项目能帮你快速建立 RAG 系统的全局认知
-
-**一句话：学完 Super Agent，你既能跟面试官聊 RAG、Agent、MCP 的技术深度，也能证明自己的项目工程化水平。不管是校招还是社招，这个项目都能成为你简历上最有区分度的一笔。**
-
-# 用到的技术一览
-
-| 技术 | 说明 | 官网 |
-| :--- | :--- | :--- |
-| Jdk | 编译和运行版本 | [https://openjdk.org](https://openjdk.org) |
-| Spring Boot | 应用框架 | [https://spring.io/projects/spring-boot](https://spring.io/projects/spring-boot) |
-| Spring AI | AI 能力基础框架 | [https://spring.io/projects/spring-ai](https://spring.io/projects/spring-ai) |
-| Spring AI Alibaba | 阿里云 AI 适配，提供 ReactAgent | [https://github.com/alibaba/spring-ai-alibaba](https://github.com/alibaba/spring-ai-alibaba) |
-| MyBatis Plus | ORM 框架 | [https://baomidou.com](https://baomidou.com) |
-| MySQL | 业务数据库 | [https://www.mysql.com](https://www.mysql.com) |
-| PostgreSQL + PGVector | 向量数据库 | [https://github.com/pgvector/pgvector](https://github.com/pgvector/pgvector) |
-| Elasticsearch | 关键词搜索引擎 | [https://github.com/elastic/elasticsearch](https://github.com/elastic/elasticsearch) |
-| Neo4j | 图数据库，文档结构图谱 | [https://neo4j.com](https://neo4j.com) |
-| Redis | 分布式缓存 | [https://redis.io](https://redis.io) |
-| Redisson | 分布式 Redis 工具 | [https://redisson.org](https://redisson.org) |
-| Kafka | 异步消息队列 | [https://kafka.apache.org](https://kafka.apache.org) |
-| MinIO | 对象存储 | [https://min.io](https://min.io) |
-| Apache Tika | 多格式文档解析 | [https://tika.apache.org](https://tika.apache.org) |
-| 阿里云百炼 DashScope | 大模型服务 | [https://dashscope.aliyun.com](https://dashscope.aliyun.com) |
-| Tavily | 联网搜索服务 | [https://tavily.com](https://tavily.com) |
-| SiliconFlow | Rerank 精排服务（可选） | [https://siliconflow.cn](https://siliconflow.cn) |
-| Vue 3 + Vite | 前端框架 | [https://vuejs.org](https://vuejs.org) |
-| Log4j2 | 日志框架 | [https://logging.apache.org/log4j/2.x](https://logging.apache.org/log4j/2.x) |
-| Knife4j | Swagger 增强 | [https://doc.xiaominfo.com](https://doc.xiaominfo.com) |
-| Lombok | Java 语言增强 | [https://projectlombok.org](https://projectlombok.org) |
-| Hutool | Java 工具类库 | [https://hutool.cn](https://hutool.cn) |
-| JWT | 登录认证 | [https://github.com/jwtk/jjwt](https://github.com/jwtk/jjwt) |
-
-# 如何启动项目
-- [👉 准备项目启动条件](https://javaup.chat/super-agent/getting-started/prerequisites)
-- [👉 如何安装项目需要的中间件环境](https://javaup.chat/super-agent/getting-started/install-middlewares)
-- [👉 后端项目部署启动](https://javaup.chat/super-agent/getting-started/backend-deploy)
-- [👉 前端项目部署启动](https://javaup.chat/super-agent/getting-started/frontend-deploy)
-
-# 文档和视频目录
-
-为了更好地帮助大家学习 Super Agent 项目，配置了非常详细完整的文档和视频，把每个知识点都会讲到，包括非常全的 AI 的技术知识，以及项目中如何使用的、为什么这么用、形成从 AI 基础到项目实战的一套完整体系。学习过程中遇到问题可以在社区反馈，本人会详细解答。
-
-[👉 文档和视频目录地址](https://javaup.chat/super-agent/overview/document-video-catalogue)
-
-# 欢迎联系我
-
-小伙伴想要实时关心项目更新的进展情况的话，可以关注公众号：阿星不是程序员
-
-在项目中的学习过程中遇到了什么问题或者有哪些建议，欢迎添加本人wx，备注：super 来领取详细的项目学习资料
-
-<div align=left>
-<img src="https://multimedia-javaup.cn/%E4%B8%AA%E4%BA%BA/%E5%BE%AE%E4%BF%A1/javaup01.png#pic_left"  width="20%">
-</div>
+- **在校生 / 校招同学**：已经有商城、外卖、博客等常规项目，想用一个 AI 项目拉开简历区分度。
+- **1-3 年后端开发者**：日常写业务系统，想转 AI 应用方向，但不想从 Python 技术栈重新开始。
+- **3-5 年社招同学**：工程能力不差，但面试被 RAG、Agent、MCP 问住，需要一个能讲深的完整项目。
+- **想进入 AI 应用团队的同学**：希望系统理解企业级 Agent 能力，从知识治理到回答生成的完整链路。
