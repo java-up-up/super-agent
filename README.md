@@ -33,12 +33,10 @@
   <a href="https://javaup.chat/super-agent/getting-started/prerequisites"><strong>快速启动</strong></a>
   ·
   <a href="https://javaup.chat/super-agent/overview/core-architecture"><strong>核心架构</strong></a>
-  ·
-  <a href="https://javaup.chat/super-agent/overview/resume-template"><strong>简历写法</strong></a>
 </p>
 
 <p align="center">
-  <strong>开源不易，如果这个项目对你有帮助，欢迎给 <a href="https://github.com/java-up-up/super-agent">Super Nexus Agent</a> 点一个 Star。</strong>
+  <strong>开源不易，如果这个项目对你有帮助，欢迎给 <a href="https://github.com/java-up-up/super-agent">Nexus Agent</a> 点一个 Star。</strong>
 </p>
 # Nexus Agent 是什么？
 
