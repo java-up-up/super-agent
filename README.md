@@ -98,7 +98,7 @@ Spring AI / LangChain4j 是好工具，但直接拿来用是远远不够！
 
 - **组合式切块引擎：—结构切块做主干、递归分块做兜底、语义分块做边界优化、LLM 智能切块处理疑难文档，系统按文档类型自动推荐最优策略组合**
 
-- **联网搜索与工具调用：集成 Tavily 搜索，支持工具重试、指数退避、异常兜底，模型调用次数和工具调用次数都有 Hook 限制，防止资源滥用和死循环**
+- **联网搜索与工具调用：集成 Tavily 搜索和 You.com Search + Research API，支持工具重试、指数退避、异常兜底，模型调用次数和工具调用次数都有 Hook 限制，防止资源滥用和死循环**
 
 - **推荐追问问题生成：主回答完成后额外调用模型，生成最多 3 个可继续追问的问题，引导用户深入探索**
 
@@ -440,6 +440,7 @@ Skills 体系让 Agent 的能力边界不再是固定的，而是可以**持续�
 | Apache Tika | 多格式文档解析 | [https://tika.apache.org](https://tika.apache.org) |
 | 阿里云百炼 DashScope | 大模型服务 | [https://dashscope.aliyun.com](https://dashscope.aliyun.com) |
 | Tavily | 联网搜索服务 | [https://tavily.com](https://tavily.com) |
+| You.com | 联网搜索 + 深度研究服务 | [https://you.com](https://you.com) |
 | SiliconFlow | Rerank 精排服务（可选） | [https://siliconflow.cn](https://siliconflow.cn) |
 | Vue 3 + Vite | 前端框架 | [https://vuejs.org](https://vuejs.org) |
 | Log4j2 | 日志框架 | [https://logging.apache.org/log4j/2.x](https://logging.apache.org/log4j/2.x) |

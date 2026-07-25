@@ -217,6 +217,47 @@ app:
         # 单次精排后保留的前 N 个候选。
         top-n: 5
 
+  youcom:
+    search:
+      # 是否启用 You.com Search API 工具。
+      enabled: true
+      # You.com Search API 服务地址。
+      base-url: https://ydc-index.io/v1
+      # Search API 接口路径。
+      search-path: /search
+      # You.com API Key。
+      # 推荐通过环境变量注入，避免把真实密钥写进配置文件。
+      api-key: ${YOUCOM_API_KEY}
+      # 单次搜索最多返回多少条候选结果。
+      max-results: 10
+      # 安全搜索级别。
+      safesearch: moderate
+      # 可选：限定搜索结果的时间范围，如 day、week、month、year，或 YYYY-MM-DDtoYYYY-MM-DD 格式。
+      freshness:
+      # 可选：限定搜索结果的来源国家，如 US、GB、CN。
+      country:
+      # 可选：限定搜索结果的语言，如 en、zh。
+      language:
+      # 连接超时，毫秒。
+      connect-timeout-ms: 3000
+      # 读超时，毫秒。
+      read-timeout-ms: 6000
+    research:
+      # 是否启用 You.com Research API 工具。
+      enabled: true
+      # You.com Research API 服务地址。
+      base-url: https://ydc-index.io/v1
+      # Research API 接口路径。
+      research-path: /research
+      # You.com API Key。
+      api-key: ${YOUCOM_API_KEY}
+      # 研究深度。允许值：lite、standard（默认）、deep、exhaustive。
+      research-effort: standard
+      # 连接超时，毫秒。
+      connect-timeout-ms: 3000
+      # 读超时，毫秒。Research API 耗时较长，建议适当调高。
+      read-timeout-ms: 60000
+
   tavily:
     # 是否启用 Tavily 联网搜索工具。
     # 关闭后，ReactAgent 即使判断需要搜索，也无法调用该工具。
