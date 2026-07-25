@@ -13,6 +13,10 @@ import org.javaup.ai.chatagent.support.DashScopeCompatibilityInterceptor;
 import org.javaup.ai.chatagent.support.TavilyToolInputFallbackInterceptor;
 import org.javaup.ai.chatagent.tool.TavilySearchRequest;
 import org.javaup.ai.chatagent.tool.TavilySearchTool;
+import org.javaup.ai.chatagent.tool.YoucomResearchRequest;
+import org.javaup.ai.chatagent.tool.YoucomResearchTool;
+import org.javaup.ai.chatagent.tool.YoucomSearchRequest;
+import org.javaup.ai.chatagent.tool.YoucomSearchTool;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -26,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * @author: 阿星不是程序员
  **/
 @Configuration
-@EnableConfigurationProperties({ChatAgentProperties.class, TavilySearchProperties.class})
+@EnableConfigurationProperties({ChatAgentProperties.class, TavilySearchProperties.class, YoucomSearchProperties.class, YoucomResearchProperties.class})
 public class ChatAgentConfiguration {
 
     @Bean
@@ -49,9 +53,31 @@ public class ChatAgentConfiguration {
     }
 
     @Bean
+    public ToolCallback youcomSearchToolCallback(YoucomSearchTool youcomSearchTool) {
+
+        return FunctionToolCallback
+            .builder("youcom_search", youcomSearchTool::search)
+            .description("通过 You.com Search API 联网搜索最新信息、事实资料和网页来源。调用时必须传 JSON 参数，至少包含非空 query；可选 maxResults 指定返回结果数量。")
+            .inputType(YoucomSearchRequest.class)
+            .build();
+    }
+
+    @Bean
+    public ToolCallback youcomResearchToolCallback(YoucomResearchTool youcomResearchTool) {
+
+        return FunctionToolCallback
+            .builder("youcom_research", youcomResearchTool::research)
+            .description("通过 You.com Research API 进行深度研究，返回带引用的高质量综述答案。调用时必须传 JSON 参数，至少包含非空 input（研究问题）；可选 researchEffort 指定研究深度（lite/standard/deep/exhaustive）。")
+            .inputType(YoucomResearchRequest.class)
+            .build();
+    }
+
+    @Bean
     public ReactAgent businessChatReactAgent(ChatModel chatModel,
                                              MysqlSaver mysqlCheckpointSaver,
                                              ToolCallback tavilySearchToolCallback,
+                                             ToolCallback youcomSearchToolCallback,
+                                             ToolCallback youcomResearchToolCallback,
                                              ChatAgentProperties chatAgentProperties,
                                              DashScopeCompatibilityInterceptor dashScopeCompatibilityInterceptor,
                                              TavilyToolInputFallbackInterceptor tavilyToolInputFallbackInterceptor) {
@@ -61,7 +87,7 @@ public class ChatAgentConfiguration {
             .model(chatModel)
             .instruction(chatAgentProperties.getSystemPrompt())
 
-            .tools(tavilySearchToolCallback)
+            .tools(tavilySearchToolCallback, youcomSearchToolCallback, youcomResearchToolCallback)
             .saver(mysqlCheckpointSaver)
 
             .parallelToolExecution(true)
@@ -78,6 +104,18 @@ public class ChatAgentConfiguration {
                     .runLimit(chatAgentProperties.getMaxToolCallsPerRun())
                     .threadLimit(chatAgentProperties.getMaxToolCallsPerThread())
                     .exitBehavior(ToolCallLimitHook.ExitBehavior.END)
+                    .build(),
+                ToolCallLimitHook.builder()
+                    .toolName("youcom_search")
+                    .runLimit(chatAgentProperties.getMaxToolCallsPerRun())
+                    .threadLimit(chatAgentProperties.getMaxToolCallsPerThread())
+                    .exitBehavior(ToolCallLimitHook.ExitBehavior.END)
+                    .build(),
+                ToolCallLimitHook.builder()
+                    .toolName("youcom_research")
+                    .runLimit(chatAgentProperties.getMaxToolCallsPerRun())
+                    .threadLimit(chatAgentProperties.getMaxToolCallsPerThread())
+                    .exitBehavior(ToolCallLimitHook.ExitBehavior.END)
                     .build()
             )
 
@@ -86,6 +124,22 @@ public class ChatAgentConfiguration {
                 tavilyToolInputFallbackInterceptor,
                 ToolRetryInterceptor.builder()
                     .toolName("tavily_search")
+                    .maxRetries(2)
+                    .initialDelay(200L)
+                    .maxDelay(1200L)
+                    .jitter(true)
+                    .onFailure(ToolRetryInterceptor.OnFailureBehavior.RETURN_MESSAGE)
+                    .build(),
+                ToolRetryInterceptor.builder()
+                    .toolName("youcom_search")
+                    .maxRetries(2)
+                    .initialDelay(200L)
+                    .maxDelay(1200L)
+                    .jitter(true)
+                    .onFailure(ToolRetryInterceptor.OnFailureBehavior.RETURN_MESSAGE)
+                    .build(),
+                ToolRetryInterceptor.builder()
+                    .toolName("youcom_research")
                     .maxRetries(2)
                     .initialDelay(200L)
                     .maxDelay(1200L)

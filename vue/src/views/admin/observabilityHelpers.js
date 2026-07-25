@@ -66,6 +66,8 @@ const EXECUTION_STATE_LABELS = {
 
 const TOOL_LABELS = {
   tavily_search: 'Tavily 联网搜索',
+  youcom_search: 'You.com 联网搜索',
+  youcom_research: 'You.com 深度研究',
   keyword: '关键词检索通道',
   vector: '向量检索通道',
   rerank: '重排精排'
