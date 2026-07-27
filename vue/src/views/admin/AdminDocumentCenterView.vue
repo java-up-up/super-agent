@@ -1667,7 +1667,7 @@ onBeforeUnmount(() => {
   font-size: 34px;
   font-weight: 900;
   letter-spacing: -0.03em;
-  color: #0f2742;
+  color: #262e3a;
   line-height: 1.08;
 }
 
@@ -1701,12 +1701,12 @@ onBeforeUnmount(() => {
 }
 
 .pipeline-headline-parent {
-  border-bottom-color: rgba(37, 87, 214, 0.22);
+  border-bottom-color: rgba(178, 31, 196, 0.22);
 }
 
 .section-headline.pipeline-headline-parent h4,
 .section-headline.pipeline-headline-parent span {
-  color: #2557d6;
+  color: #b21fc4;
 }
 
 .pipeline-headline-child {
@@ -1822,8 +1822,8 @@ onBeforeUnmount(() => {
 }
 
 .page-notice-success {
-  background: rgba(15, 118, 110, 0.1);
-  color: #0f766e;
+  background: rgba(10, 109, 122, 0.1);
+  color: #0a6d7a;
 }
 
 .page-notice-danger {
@@ -2043,23 +2043,23 @@ onBeforeUnmount(() => {
 }
 
 .strategy-status-step-completed {
-  border-color: rgba(15, 118, 110, 0.16);
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.06), rgba(255, 255, 255, 0.96));
+  border-color: rgba(10, 109, 122, 0.16);
+  background: linear-gradient(135deg, rgba(10, 109, 122, 0.06), rgba(255, 255, 255, 0.96));
 }
 
 .strategy-status-step-completed .strategy-status-index {
-  background: rgba(15, 118, 110, 0.14);
-  color: #0f766e;
+  background: rgba(10, 109, 122, 0.14);
+  color: #0a6d7a;
 }
 
 .strategy-status-step-current {
-  border-color: rgba(37, 87, 214, 0.16);
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.06), rgba(255, 255, 255, 0.96));
+  border-color: rgba(178, 31, 196, 0.16);
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.06), rgba(255, 255, 255, 0.96));
 }
 
 .strategy-status-step-current .strategy-status-index {
-  background: rgba(37, 87, 214, 0.14);
-  color: #2557d6;
+  background: rgba(178, 31, 196, 0.14);
+  color: #b21fc4;
 }
 
 .strategy-status-step-failed {
@@ -2169,7 +2169,7 @@ onBeforeUnmount(() => {
 
 .strategy-lane-parent .strategy-lane-kicker,
 .strategy-lane-parent .strategy-lane-titlebox h5 {
-  color: #2557d6;
+  color: #b21fc4;
 }
 
 .strategy-lane-child .strategy-lane-kicker,
@@ -2301,7 +2301,7 @@ onBeforeUnmount(() => {
 
 .strategy-lane-parent .strategy-lane-kicker,
 .strategy-lane-parent .strategy-lane-titlebox h5 {
-  color: #2557d6;
+  color: #b21fc4;
 }
 
 .strategy-lane-child .strategy-lane-kicker,
@@ -2418,8 +2418,8 @@ onBeforeUnmount(() => {
 }
 
 .chunk-chip-3 {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
+  background: rgba(10, 109, 122, 0.12);
+  color: #0a6d7a;
 }
 
 .chunk-chip-4 {
@@ -2476,7 +2476,7 @@ onBeforeUnmount(() => {
 }
 
 .selected-flow-board-parent {
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.05), rgba(37, 87, 214, 0.015));
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.05), rgba(178, 31, 196, 0.015));
 }
 
 .selected-flow-board-child {
@@ -2484,13 +2484,13 @@ onBeforeUnmount(() => {
 }
 
 .timeline-list-parent .timeline-item {
-  border-color: rgba(37, 87, 214, 0.12);
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.04), rgba(255, 255, 255, 0.96));
+  border-color: rgba(178, 31, 196, 0.12);
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.04), rgba(255, 255, 255, 0.96));
 }
 
 .timeline-list-parent .timeline-index {
-  background: rgba(37, 87, 214, 0.12);
-  color: #2557d6;
+  background: rgba(178, 31, 196, 0.12);
+  color: #b21fc4;
 }
 
 .timeline-list-child .timeline-item {
@@ -2512,7 +2512,7 @@ onBeforeUnmount(() => {
 }
 
 .selected-flow-label-parent {
-  color: #2557d6 !important;
+  color: #b21fc4 !important;
 }
 
 .selected-flow-label-child {
@@ -2603,12 +2603,12 @@ onBeforeUnmount(() => {
 }
 
 .selected-flow-board-parent .selected-flow-card {
-  border-color: rgba(37, 87, 214, 0.14);
-  box-shadow: 0 12px 24px rgba(37, 87, 214, 0.07);
+  border-color: rgba(178, 31, 196, 0.14);
+  box-shadow: 0 12px 24px rgba(178, 31, 196, 0.07);
 }
 
 .selected-flow-board-parent .selected-flow-order {
-  background: linear-gradient(135deg, #173da8, #2557d6);
+  background: linear-gradient(135deg, #680f67, #b21fc4);
 }
 
 .selected-flow-board-child .selected-flow-card {
@@ -2617,7 +2617,7 @@ onBeforeUnmount(() => {
 }
 
 .selected-flow-board-child .selected-flow-order {
-  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  background: linear-gradient(135deg, #0a6d7a, #14b8a6);
 }
 
 .selected-flow-order {
@@ -2686,18 +2686,18 @@ onBeforeUnmount(() => {
 }
 
 .strategy-picker-parent .strategy-chip.active {
-  border-color: rgba(37, 87, 214, 0.4);
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.14), rgba(37, 87, 214, 0.04));
-  box-shadow: 0 4px 16px rgba(37, 87, 214, 0.16);
+  border-color: rgba(178, 31, 196, 0.4);
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.14), rgba(178, 31, 196, 0.04));
+  box-shadow: 0 4px 16px rgba(178, 31, 196, 0.16);
 }
 
 .strategy-picker-parent .strategy-chip.active .strategy-chip-state {
-  background: rgba(37, 87, 214, 0.16);
-  color: #2557d6;
+  background: rgba(178, 31, 196, 0.16);
+  color: #b21fc4;
 }
 
 .strategy-picker-parent .strategy-chip-check {
-  color: #2557d6;
+  color: #b21fc4;
 }
 
 .strategy-picker-child .strategy-chip.active {
@@ -2787,8 +2787,8 @@ onBeforeUnmount(() => {
 }
 
 .preview-box-parent {
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.05), rgba(37, 87, 214, 0.015));
-  border-color: rgba(37, 87, 214, 0.18);
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.05), rgba(178, 31, 196, 0.015));
+  border-color: rgba(178, 31, 196, 0.18);
 }
 
 .preview-box-child {
@@ -2806,7 +2806,7 @@ onBeforeUnmount(() => {
 }
 
 .preview-box-title-parent {
-  color: #2557d6 !important;
+  color: #b21fc4 !important;
 }
 
 .preview-box-title-child {
@@ -2950,14 +2950,14 @@ onBeforeUnmount(() => {
 }
 
 .action-stage-completed {
-  border-color: rgba(15, 118, 110, 0.18);
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.96));
+  border-color: rgba(10, 109, 122, 0.18);
+  background: linear-gradient(135deg, rgba(10, 109, 122, 0.12), rgba(255, 255, 255, 0.96));
 }
 
 .action-stage-completed .action-stage-index,
 .action-stage-completed .action-stage-badge {
-  background: rgba(15, 118, 110, 0.14);
-  color: #0f766e;
+  background: rgba(10, 109, 122, 0.14);
+  color: #0a6d7a;
 }
 
 .action-stage-locked {
@@ -2989,7 +2989,7 @@ onBeforeUnmount(() => {
 }
 
 .action-button-confirm {
-  background: linear-gradient(135deg, #0f766e, #0b5f69);
+  background: linear-gradient(135deg, #0a6d7a, #075563);
 }
 
 .action-button-build {
@@ -3003,8 +3003,8 @@ onBeforeUnmount(() => {
 }
 
 .action-stage-completed .action-button-confirm {
-  background: linear-gradient(135deg, #0f766e, #0c9488);
-  box-shadow: 0 12px 20px rgba(15, 118, 110, 0.18);
+  background: linear-gradient(135deg, #0a6d7a, #0c7f8f);
+  box-shadow: 0 12px 20px rgba(10, 109, 122, 0.18);
 }
 
 .action-stage-completed .action-button-confirm:disabled,

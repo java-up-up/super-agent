@@ -256,7 +256,7 @@ onMounted(() => {
 .message-card {
   display: flex;
   gap: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .message-user {
@@ -264,34 +264,36 @@ onMounted(() => {
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.16), rgba(239, 123, 57, 0.12));
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  color: var(--color-primary-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  border: 1px solid var(--border);
+  color: var(--brand-700);
 }
 
 .message-user .avatar {
-  background: rgba(37, 87, 214, 0.1);
+  background: var(--brand-50);
+  color: var(--brand-700);
 }
 
 .bubble {
   min-width: 0;
   flex: 1;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: var(--shadow-card);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-control);
 }
 
 .message-user .bubble {
   max-width: min(760px, 100%);
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.08), rgba(37, 87, 214, 0.03));
+  background: var(--brand-50);
+  border-color: var(--brand-100);
 }
 
 .bubble-header {
@@ -320,10 +322,10 @@ onMounted(() => {
   flex: none;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--color-text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--muted-foreground);
 }
 
 .plain-text {
@@ -349,8 +351,8 @@ onMounted(() => {
 }
 
 .message-status {
-  border: 1px solid rgba(37, 87, 214, 0.14);
-  background: rgba(37, 87, 214, 0.06);
+  border: 1px solid rgba(178, 31, 196, 0.14);
+  background: rgba(178, 31, 196, 0.06);
   color: var(--color-primary-strong);
 }
 
@@ -369,24 +371,24 @@ onMounted(() => {
 .route-card {
   margin-top: 16px;
   padding: 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(241, 245, 249, 0.92));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--muted);
 }
 
 .route-card-success {
-  border-color: rgba(34, 197, 94, 0.18);
-  background: linear-gradient(180deg, rgba(240, 253, 244, 0.92), rgba(236, 253, 245, 0.92));
+  border-color: var(--success-200);
+  background: var(--success-50);
 }
 
 .route-card-warning {
-  border-color: rgba(245, 158, 11, 0.2);
-  background: linear-gradient(180deg, rgba(255, 251, 235, 0.92), rgba(254, 243, 199, 0.72));
+  border-color: var(--warning-200);
+  background: var(--warning-50);
 }
 
 .route-card-danger {
-  border-color: rgba(239, 68, 68, 0.18);
-  background: linear-gradient(180deg, rgba(254, 242, 242, 0.92), rgba(254, 226, 226, 0.72));
+  border-color: var(--danger-200);
+  background: var(--danger-50);
 }
 
 .route-card-head {
@@ -492,8 +494,8 @@ onMounted(() => {
 }
 
 .route-candidate-primary {
-  border-color: rgba(37, 87, 214, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(37, 87, 214, 0.08);
+  border-color: rgba(178, 31, 196, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(178, 31, 196, 0.08);
 }
 
 .route-candidate-card strong {
@@ -549,7 +551,7 @@ onMounted(() => {
 .markdown-body :deep(a) {
   color: var(--color-primary-strong);
   text-decoration: underline;
-  text-decoration-color: rgba(37, 87, 214, 0.22);
+  text-decoration-color: rgba(178, 31, 196, 0.22);
   text-underline-offset: 3px;
 }
 
@@ -597,20 +599,19 @@ onMounted(() => {
 }
 
 .recommend-chip {
-  border: 1px solid rgba(37, 87, 214, 0.12);
-  background: rgba(37, 87, 214, 0.06);
-  color: var(--color-primary-strong);
-  border-radius: 999px;
-  padding: 10px 14px;
+  border: 1px solid var(--brand-100);
+  background: var(--brand-50);
+  color: var(--brand-800);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
   font-size: 13px;
   font-weight: 600;
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .recommend-chip:hover {
-  transform: translateY(-1px);
-  background: rgba(37, 87, 214, 0.1);
-  border-color: rgba(37, 87, 214, 0.18);
+  background: var(--brand-100);
+  border-color: var(--brand-200);
 }
 
 .icon {

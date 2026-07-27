@@ -102,20 +102,20 @@ function mapTaskClass(code) {
 }
 
 .status-processing {
-  background: rgba(37, 87, 214, 0.1);
-  color: #1f4ebb;
-  border-color: rgba(37, 87, 214, 0.2);
+  background: rgba(178, 31, 196, 0.1);
+  color: #8c168d;
+  border-color: rgba(178, 31, 196, 0.2);
 }
 
 .status-success {
-  background: rgba(21, 115, 91, 0.1);
-  color: #12644f;
-  border-color: rgba(21, 115, 91, 0.2);
+  background: rgba(18, 125, 74, 0.1);
+  color: #127d4a;
+  border-color: rgba(18, 125, 74, 0.2);
 }
 
 .status-danger {
-  background: rgba(179, 76, 47, 0.1);
-  color: #9f422b;
-  border-color: rgba(179, 76, 47, 0.2);
+  background: rgba(177, 47, 38, 0.1);
+  color: #b12f26;
+  border-color: rgba(177, 47, 38, 0.2);
 }
 </style>

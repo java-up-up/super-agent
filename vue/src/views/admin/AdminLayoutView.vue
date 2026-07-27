@@ -117,7 +117,10 @@ function isNavItemActive(targetPath) {
   if (!targetPath) {
     return false
   }
-  return route.path === targetPath
+  if (targetPath === '/admin/knowledge-route') {
+    return route.path === targetPath
+  }
+  return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
 }
 </script>
 
@@ -125,7 +128,7 @@ function isNavItemActive(targetPath) {
 .admin-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
 }
 
 /* ── Sidebar: 白底 + 右侧border ── */
@@ -136,8 +139,8 @@ function isNavItemActive(targetPath) {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: #fff;
-  border-right: 1px solid var(--color-border);
+  background: var(--card);
+  border-right: 1px solid var(--admin-border);
   overflow-y: auto;
 }
 
@@ -145,7 +148,9 @@ function isNavItemActive(targetPath) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 20px 16px;
+  min-height: 56px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .brand-mark {
@@ -170,15 +175,15 @@ function isNavItemActive(targetPath) {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 12px;
+  gap: 4px;
+  padding: 12px 8px;
   flex: 1;
 }
 
 .nav-group-label {
   font-size: 11px;
   color: var(--color-muted);
-  padding: 12px 8px 6px;
+  padding: 8px 8px 4px;
   font-weight: 500;
 }
 
@@ -186,35 +191,25 @@ function isNavItemActive(targetPath) {
   text-decoration: none;
   display: flex;
   align-items: center;
+  min-height: 36px;
   gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--color-muted-strong);
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  color: var(--muted-foreground);
   font-size: 14px;
   transition: background 0.15s ease, color 0.15s ease;
   position: relative;
 }
 
 .nav-item:hover {
-  color: var(--color-text);
-  background: var(--color-surface-soft);
+  color: var(--foreground);
+  background: var(--muted);
 }
 
 .nav-item.active {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-  font-weight: 500;
-}
-
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--color-primary);
+  color: var(--foreground);
+  background: var(--brand-50);
+  font-weight: 600;
 }
 
 .nav-icon {
@@ -225,8 +220,8 @@ function isNavItemActive(targetPath) {
 
 /* ── Sidebar 底部用户 ── */
 .sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid var(--color-border);
+  padding: 8px;
+  border-top: 1px solid var(--border);
 }
 
 .admin-icp {
@@ -241,7 +236,7 @@ function isNavItemActive(targetPath) {
   gap: 8px;
   padding: 8px;
   border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
+  background: var(--muted);
 }
 
 .sidebar-user-info {
@@ -292,7 +287,7 @@ function isNavItemActive(targetPath) {
 
 .logout-btn:hover {
   color: var(--color-danger);
-  background: rgba(179, 76, 47, 0.08);
+  background: rgba(177, 47, 38, 0.08);
 }
 
 /* ── 主区域 ── */
@@ -300,7 +295,7 @@ function isNavItemActive(targetPath) {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background: var(--admin-bg);
 }
 
 .admin-header {
@@ -311,10 +306,11 @@ function isNavItemActive(targetPath) {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 0 24px;
-  height: 52px;
-  background: #fff;
-  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  height: 56px;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  border-bottom: 1px solid var(--admin-border);
+  backdrop-filter: blur(10px);
 }
 
 .header-left {
@@ -400,18 +396,20 @@ function isNavItemActive(targetPath) {
 }
 
 .admin-content {
-  padding: 20px 24px;
+  width: min(1600px, 100%);
+  padding: 24px 20px 32px;
+  margin: 0 auto;
 }
 
 .menu-button {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   width: 36px;
   height: 36px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-sm);
   color: var(--color-text);
-  background: #fff;
+  background: var(--card);
 }
 
 .mobile-only,

@@ -507,7 +507,7 @@ onMounted(loadSessions)
 .filter-field select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 87, 214, 0.1);
+  box-shadow: 0 0 0 3px rgba(178, 31, 196, 0.1);
 }
 
 .filter-actions {
@@ -596,12 +596,12 @@ onMounted(loadSessions)
 }
 
 .chip-completed {
-  background: rgba(21, 115, 91, 0.1);
+  background: rgba(18, 125, 74, 0.1);
   color: var(--color-success);
 }
 
 .chip-failed {
-  background: rgba(179, 76, 47, 0.1);
+  background: rgba(177, 47, 38, 0.1);
   color: var(--color-danger);
 }
 
@@ -650,7 +650,7 @@ onMounted(loadSessions)
   margin: 10px 0 0;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  background: rgba(179, 76, 47, 0.06);
+  background: rgba(177, 47, 38, 0.06);
   color: var(--color-danger);
   font-size: 13px;
   line-height: 1.6;
@@ -694,8 +694,8 @@ onMounted(loadSessions)
 
 .error-notice {
   color: var(--color-danger);
-  background: rgba(179, 76, 47, 0.06);
-  border: 1px solid rgba(179, 76, 47, 0.1);
+  background: rgba(177, 47, 38, 0.06);
+  border: 1px solid rgba(177, 47, 38, 0.1);
 }
 
 /* ── Pagination ── */

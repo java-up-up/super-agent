@@ -13,7 +13,8 @@ const router = createRouter({
       name: 'BusinessChat',
       component: () => import('../views/BusinessChatView.vue'),
       meta: {
-        title: '业务对话'
+        title: '业务对话',
+        layout: 'fullscreen'
       }
     },
     {

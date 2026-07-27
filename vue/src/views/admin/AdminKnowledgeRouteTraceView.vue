@@ -666,7 +666,7 @@ onMounted(() => loadTraces('1'))
 
 .trace-record-card.active {
   background: var(--color-primary-soft);
-  border-color: rgba(37, 87, 214, 0.2);
+  border-color: rgba(178, 31, 196, 0.2);
 }
 
 .record-card-chips {
@@ -780,7 +780,7 @@ onMounted(() => loadTraces('1'))
 }
 
 .highlight-card {
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.07), rgba(239, 123, 57, 0.07));
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.07), rgba(239, 123, 57, 0.07));
 }
 
 .summary-label {
@@ -825,8 +825,8 @@ onMounted(() => loadTraces('1'))
 }
 
 .doc-timeline-top {
-  border-color: rgba(37, 87, 214, 0.2);
-  background: linear-gradient(135deg, rgba(37, 87, 214, 0.05), rgba(255, 255, 255, 0.9));
+  border-color: rgba(178, 31, 196, 0.2);
+  background: linear-gradient(135deg, rgba(178, 31, 196, 0.05), rgba(255, 255, 255, 0.9));
 }
 
 .doc-timeline-rank {
@@ -998,7 +998,7 @@ pre {
 .health-fill { display: block; height: 100%; border-radius: 999px; }
 .health-fill-success { background: linear-gradient(90deg, #22c55e, #16a34a); }
 .health-fill-warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
-.health-fill-neutral { background: linear-gradient(90deg, #2557d6, #0f766e); }
+.health-fill-neutral { background: linear-gradient(90deg, #b21fc4, #0a6d7a); }
 
 /* ── Top 文档 ── */
 .top-doc-list { display: grid; gap: 8px; }

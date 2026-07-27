@@ -834,8 +834,8 @@ watchEffect(() => {
 
 .mode-badge { background: rgba(23, 48, 79, 0.07); color: #17304f; }
 .neutral-badge { background: rgba(23, 48, 79, 0.06); color: var(--color-muted-strong); }
-.badge-completed { background: rgba(21, 115, 91, 0.1); color: var(--color-success); }
-.badge-failed { background: rgba(179, 76, 47, 0.1); color: var(--color-danger); }
+.badge-completed { background: rgba(18, 125, 74, 0.1); color: var(--color-success); }
+.badge-failed { background: rgba(177, 47, 38, 0.1); color: var(--color-danger); }
 .badge-stopped { background: rgba(168, 101, 32, 0.1); color: var(--color-warning); }
 .badge-running { background: rgba(13, 124, 124, 0.1); color: #0d7c7c; }
 
@@ -1077,8 +1077,8 @@ watchEffect(() => {
 }
 
 .chip-neutral { background: rgba(23, 48, 79, 0.06); color: var(--color-muted-strong); }
-.chip-completed { background: rgba(21, 115, 91, 0.1); color: var(--color-success); }
-.chip-failed { background: rgba(179, 76, 47, 0.1); color: var(--color-danger); }
+.chip-completed { background: rgba(18, 125, 74, 0.1); color: var(--color-success); }
+.chip-failed { background: rgba(177, 47, 38, 0.1); color: var(--color-danger); }
 .chip-warning { background: rgba(168, 101, 32, 0.1); color: var(--color-warning); }
 
 .summary-metrics {
@@ -1363,8 +1363,8 @@ watchEffect(() => {
 
 .error-notice {
   color: var(--color-danger);
-  background: rgba(179, 76, 47, 0.06);
-  border: 1px solid rgba(179, 76, 47, 0.1);
+  background: rgba(177, 47, 38, 0.06);
+  border: 1px solid rgba(177, 47, 38, 0.1);
 }
 
 /* ── Responsive ── */

@@ -190,32 +190,34 @@
           </template>
         </div>
 
-        <textarea
-          ref="composerRef"
-          v-model="userInput"
-          class="composer-input"
-          rows="1"
-          :placeholder="composerPlaceholder"
-          :disabled="isStreaming"
-          @input="resizeComposer"
-          @keydown="handleComposerKeydown"
-        ></textarea>
+        <div class="composer-input-row">
+          <textarea
+            ref="composerRef"
+            v-model="userInput"
+            class="composer-input"
+            rows="1"
+            :placeholder="composerPlaceholder"
+            :disabled="isStreaming"
+            @input="resizeComposer"
+            @keydown="handleComposerKeydown"
+          ></textarea>
 
-        <div class="composer-actions">
-          <button
-            v-if="isStreaming"
-            class="ghost-button"
-            type="button"
-            :disabled="isStopping"
-            @click="stopStreaming"
-          >
-            <StopIcon class="icon" />
-            {{ isStopping ? '停止中...' : '停止生成' }}
-          </button>
-          <button class="primary-button" type="button" :disabled="isStreaming || !canSend" @click="sendMessage()">
-            <PaperAirplaneIcon class="icon" />
-            发送
-          </button>
+          <div class="composer-actions">
+            <button
+              v-if="isStreaming"
+              class="ghost-button"
+              type="button"
+              :disabled="isStopping"
+              @click="stopStreaming"
+            >
+              <StopIcon class="icon" />
+              <span>{{ isStopping ? '停止中...' : '停止生成' }}</span>
+            </button>
+            <button class="primary-button" type="button" :disabled="isStreaming || !canSend" @click="sendMessage()">
+              <PaperAirplaneIcon class="icon" />
+              <span>发送</span>
+            </button>
+          </div>
         </div>
       </footer>
     </main>
@@ -805,25 +807,27 @@ onMounted(async () => {
 <style scoped>
 .workspace {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 18px;
-  min-height: calc(100vh - 220px);
+  grid-template-columns: 288px minmax(0, 1fr);
+  gap: 0;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--background);
 }
 
 .sidebar,
 .chat-panel {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: var(--card);
 }
 
 .sidebar {
-  padding: 22px;
+  min-width: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 760px;
+  gap: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border);
 }
 
 .sidebar-header,
@@ -838,6 +842,17 @@ onMounted(async () => {
   align-items: center;
 }
 
+.sidebar-header {
+  min-height: 64px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.new-chat-button {
+  width: calc(100% - 24px);
+  margin: 12px;
+}
+
 .sidebar-header,
 .chat-toolbar,
 .composer-actions {
@@ -847,7 +862,7 @@ onMounted(async () => {
 .sidebar h2 {
   margin: 0;
   font-size: 16px;
-  color: var(--color-text-strong);
+  color: var(--foreground);
 }
 
 .chat-toolbar h2 {
@@ -863,15 +878,17 @@ onMounted(async () => {
   gap: 8px;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 0 12px 12px;
 }
 
 .session-card {
   width: 100%;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-left: 2px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 6px 8px 8px;
   display: flex;
   gap: 10px;
   text-align: left;
@@ -880,11 +897,12 @@ onMounted(async () => {
 }
 
 .session-card:hover {
-  border-color: rgba(37, 87, 214, 0.2);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
 .session-card.active {
-  border-color: var(--color-primary);
+  border-left-color: var(--primary);
+  background: var(--secondary);
 }
 /* PLACEHOLDER_CHAT_STYLES_PART2 */
 
@@ -936,11 +954,12 @@ onMounted(async () => {
 }
 
 .empty-sidebar {
-  padding: 18px;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  padding: 40px 16px;
+  border: 0;
+  border-radius: 0;
   color: var(--color-muted);
-  background: var(--color-surface-soft);
+  background: transparent;
+  text-align: center;
 }
 
 .empty-sidebar p {
@@ -951,11 +970,11 @@ onMounted(async () => {
 
 .chat-panel {
   min-width: 0;
-  min-height: 760px;
-  padding: 22px;
+  min-height: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  overflow: hidden;
 }
 
 .toolbar-left,
@@ -964,8 +983,9 @@ onMounted(async () => {
 }
 
 .chat-toolbar {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-border);
+  min-height: 64px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
 }
 /* PLACEHOLDER_CHAT_STYLES_PART3 */
 
@@ -973,10 +993,18 @@ onMounted(async () => {
   min-height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
+  padding: 24px 20px;
+  border: none;
+  border-radius: 0;
+  background: var(--background);
+}
+
+.messages-panel > :deep(.message-card),
+.messages-panel > :deep(.notice),
+.messages-panel > .notice,
+.messages-panel > .empty-state {
+  width: min(920px, 100%);
+  margin-inline: auto;
 }
 
 .notice {
@@ -984,13 +1012,13 @@ onMounted(async () => {
   padding: 12px 14px;
   border-radius: var(--radius-sm);
   background: var(--color-primary-soft);
-  border: 1px solid rgba(37, 87, 214, 0.1);
+  border: 1px solid rgba(178, 31, 196, 0.1);
   color: var(--color-primary);
 }
 
 .notice-error {
-  background: rgba(179, 76, 47, 0.08);
-  border-color: rgba(179, 76, 47, 0.14);
+  background: rgba(177, 47, 38, 0.08);
+  border-color: rgba(177, 47, 38, 0.14);
   color: var(--color-danger);
 }
 
@@ -1001,8 +1029,8 @@ onMounted(async () => {
   text-align: center;
   padding: 56px 24px;
   border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px dashed var(--color-border);
+  background: transparent;
+  border: 0;
 }
 
 .empty-state h3 {
@@ -1057,16 +1085,21 @@ onMounted(async () => {
 }
 
 .prompt-chip:hover {
-  border-color: rgba(37, 87, 214, 0.2);
+  border-color: rgba(178, 31, 196, 0.2);
   background: var(--color-surface-soft);
 }
 /* PLACEHOLDER_CHAT_STYLES_PART4 */
 
 .composer-panel {
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: #fff;
+  flex: none;
+  padding: 12px 20px max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.composer-panel > * {
+  width: min(920px, 100%);
+  margin-inline: auto;
 }
 
 .composer-header {
@@ -1101,7 +1134,7 @@ onMounted(async () => {
   gap: 6px;
   padding: 4px;
   border-radius: 999px;
-  background: var(--color-surface-soft);
+  background: var(--muted);
 }
 
 .mode-button {
@@ -1117,7 +1150,7 @@ onMounted(async () => {
 }
 
 .mode-button.active {
-  background: #fff;
+  background: var(--card);
   color: var(--color-primary);
   box-shadow: var(--shadow-sm);
 }
@@ -1131,11 +1164,11 @@ onMounted(async () => {
   min-width: 240px;
   max-width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 14px;
   color: var(--color-text-strong);
-  background: #fff;
+  background: var(--card);
 }
 
 .scope-pill {
@@ -1143,7 +1176,7 @@ onMounted(async () => {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(37, 87, 214, 0.08);
+  background: rgba(178, 31, 196, 0.08);
   color: var(--color-primary);
   font-size: 13px;
   font-weight: 500;
@@ -1170,9 +1203,16 @@ onMounted(async () => {
   font-weight: 600;
 }
 
+.composer-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
 .composer-input {
   width: 100%;
-  min-height: 56px;
+  min-height: 44px;
   max-height: 220px;
   resize: none;
   border: 1px solid var(--color-border);
@@ -1194,8 +1234,9 @@ onMounted(async () => {
 
 .composer-actions {
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 0;
   justify-content: flex-end;
+  flex-direction: column;
 }
 
 .primary-button,
@@ -1211,15 +1252,15 @@ onMounted(async () => {
 
 .primary-button,
 .ghost-button {
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   padding: 10px 16px;
   font-weight: 600;
   font-size: 14px;
 }
 
 .primary-button {
-  background: var(--color-primary);
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .primary-button:hover:not(:disabled) {
@@ -1238,15 +1279,16 @@ onMounted(async () => {
 
 .admin-entry-button {
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   padding: 10px 16px;
   font-weight: 600;
   font-size: 14px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #ffffff;
-  background: var(--color-text-strong);
+  color: var(--foreground);
+  background: var(--secondary);
+  border-color: var(--border);
   cursor: pointer;
   text-decoration: none;
   transition: opacity 0.2s ease;
@@ -1277,8 +1319,8 @@ onMounted(async () => {
 .delete-button {
   width: 32px;
   height: 32px;
-  background: rgba(179, 76, 47, 0.08);
-  border-color: rgba(179, 76, 47, 0.12);
+  background: rgba(177, 47, 38, 0.08);
+  border-color: rgba(177, 47, 38, 0.12);
   color: var(--color-danger);
   flex: none;
 }
@@ -1308,10 +1350,10 @@ onMounted(async () => {
 
   .sidebar {
     position: fixed;
-    left: 18px;
-    top: 18px;
-    bottom: 18px;
-    width: min(360px, calc(100vw - 36px));
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(320px, calc(100vw - 32px));
     z-index: 30;
     transform: translateX(-110%);
     transition: transform 0.24s ease;
@@ -1325,7 +1367,7 @@ onMounted(async () => {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(9, 21, 34, 0.36);
+    background: var(--overlay);
     z-index: 20;
   }
 
@@ -1337,13 +1379,30 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .chat-panel,
   .sidebar {
-    padding: 16px;
-    border-radius: var(--radius-lg);
+    padding: 0;
+    border-radius: 0;
   }
 
   .chat-toolbar,
-  .composer-header,
+  .composer-panel {
+    padding-inline: 12px;
+  }
+
+  .messages-panel {
+    padding: 18px 12px;
+  }
+
+  .composer-input-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .composer-actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .chat-toolbar,
+  .composer-header {
     align-items: flex-start;
     flex-direction: column;
   }

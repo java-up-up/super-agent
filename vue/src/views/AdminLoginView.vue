@@ -1,17 +1,17 @@
 <template>
   <section class="login-shell">
-    <div class="login-panel">
-      <div class="login-copy">
-        <h1>进入管理后台工作台</h1>
-        <p class="login-description">
-          这里用于管理文档接入、知识路由与对话观测。账号和密码由当前部署环境配置，登录后才能进入后台。
-        </p>
+    <main class="login-panel">
+      <div class="login-brand">
+        <div class="brand-mark" aria-hidden="true">NA</div>
+        <div>
+          <p class="brand-kicker">Nexus Agent</p>
+          <h1>管理后台</h1>
+        </div>
       </div>
-
       <form class="login-form" @submit.prevent="submitLogin">
         <div class="form-header">
-          <p>后台入口</p>
-          <h2>管理台登录</h2>
+          <h2>登录工作台</h2>
+          <p>使用当前部署环境配置的后台账号，进入文档、知识路由与对话观测页面。</p>
         </div>
 
         <label class="field">
@@ -33,7 +33,7 @@
           </button>
         </div>
       </form>
-    </div>
+    </main>
 
     <IcpFooter class="login-icp" />
   </section>
@@ -94,67 +94,74 @@ function goBackChat() {
 <style scoped>
 .login-shell {
   position: relative;
-  min-height: 100vh;
-  padding: 32px 32px 64px;
+  min-height: 100dvh;
+  padding: 64px 16px 76px;
   display: grid;
   place-items: center;
-  background: var(--color-bg);
+  background: var(--admin-bg);
 }
 
 .login-panel {
-  width: min(960px, 100%);
-  display: grid;
-  grid-template-columns: 1.15fr 0.9fr;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
+  width: min(440px, 100%);
 }
 
-.login-copy {
-  background: #fff;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  padding: 40px;
+.login-brand {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+  margin-bottom: 20px;
 }
 
-.login-copy h1 {
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-brand h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--color-text-strong);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--foreground);
 }
 
-.login-description {
-  max-width: 580px;
-  margin: 14px 0 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--color-muted);
+.brand-kicker {
+  margin: 0 0 2px;
+  color: var(--muted-foreground);
+  font-size: 12px;
 }
 
 .login-form {
-  background: #fff;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  border-left: 1px solid var(--color-border);
-  padding: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-control);
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .form-header p {
-  margin: 0;
-  color: var(--color-primary);
+  margin: 8px 0 0;
+  color: var(--muted-foreground);
   font-size: 13px;
-  font-weight: 600;
+  line-height: 1.65;
 }
 
 .form-header h2 {
-  margin: 8px 0 0;
-  font-size: 20px;
-  color: var(--color-text-strong);
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--foreground);
 }
 
 .field {
@@ -167,29 +174,30 @@ function goBackChat() {
 .field span {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-muted);
+  color: var(--foreground);
 }
 
 .field input {
   width: 100%;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--input);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-  background: #ffffff;
-  color: var(--color-text);
+  background: var(--card);
+  color: var(--foreground);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .field input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 16%, transparent);
 }
 
 .error-message {
   margin: 16px 0 0;
-  color: var(--color-danger);
+  color: var(--destructive);
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .form-actions {
@@ -211,8 +219,8 @@ function goBackChat() {
 }
 
 .primary-button {
-  color: #ffffff;
-  background: var(--color-primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
 }
 
 .primary-button:hover {
@@ -220,13 +228,13 @@ function goBackChat() {
 }
 
 .secondary-button {
-  color: var(--color-text);
-  background: #fff;
-  border-color: var(--color-border);
+  color: var(--foreground);
+  background: var(--card);
+  border-color: var(--border);
 }
 
 .secondary-button:hover {
-  background: var(--color-surface-soft);
+  background: var(--secondary);
 }
 
 .login-icp {
@@ -238,26 +246,11 @@ function goBackChat() {
 
 @media (max-width: 960px) {
   .login-shell {
-    padding: 18px 18px 58px;
-  }
-
-  .login-panel {
-    grid-template-columns: 1fr;
-  }
-
-  .login-copy {
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 32px 16px 68px;
   }
 
   .login-form {
-    border-left: none;
-    border-top: 1px solid var(--color-border);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-
-  .login-copy,
-  .login-form {
-    padding: 28px;
+    padding: 20px;
   }
 
   .login-icp {

@@ -1,41 +1,130 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import 'highlight.js/styles/github.css';
 
 :root {
   color-scheme: light;
-  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-display: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --color-bg: #f0f2f5;
-  --color-surface: #ffffff;
-  --color-surface-soft: #f7f8fa;
-  --color-border: #e4e8ed;
-  --color-border-strong: #d0d7e0;
-  --color-text: #1a2233;
-  --color-text-strong: #0d1522;
-  --color-muted: #6b7a90;
-  --color-muted-strong: #4a5568;
-  --color-primary: #2557d6;
-  --color-primary-strong: #173da8;
-  --color-primary-soft: rgba(37, 87, 214, 0.08);
-  --color-accent: #ef7b39;
-  --color-success: #15735b;
-  --color-warning: #a86520;
-  --color-danger: #b34c2f;
-  --color-admin-sidebar: #ffffff;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --radius-lg: 12px;
-  --radius-md: 8px;
-  --radius-sm: 6px;
+  font-synthesis: none;
+
+  /* Upgrade design system primitives. */
+  --neutral-0: #ffffff;
+  --neutral-25: #fafbfd;
+  --neutral-50: #f3f6f9;
+  --neutral-100: #e9edf3;
+  --neutral-200: #dce3ec;
+  --neutral-300: #c1cbd8;
+  --neutral-400: #92a0b0;
+  --neutral-500: #647082;
+  --neutral-600: #4f5b6b;
+  --neutral-700: #384352;
+  --neutral-800: #262e3a;
+  --neutral-900: #161d28;
+  --neutral-950: #0c111a;
+
+  --brand-50: #fdeafd;
+  --brand-100: #f9cafc;
+  --brand-200: #f09af3;
+  --brand-400: #cc3ee0;
+  --brand-500: #c030d4;
+  --brand-600: #b21fc4;
+  --brand-700: #8c168d;
+  --brand-800: #680f67;
+  --brand-900: #4a0a49;
+
+  --success-50: #e5f6ea;
+  --success-200: #a6d9b6;
+  --success-600: #188a52;
+  --success-700: #127d4a;
+  --running-50: #e4f6f8;
+  --running-200: #a2d8df;
+  --running-700: #0a6d7a;
+  --warning-50: #fff5df;
+  --warning-200: #efce8f;
+  --warning-700: #8a5600;
+  --danger-50: #fdecea;
+  --danger-200: #eab1ac;
+  --danger-700: #b12f26;
+
+  /* Semantic roles shared with the upgrade frontend. */
+  --background: var(--neutral-50);
+  --foreground: var(--neutral-900);
+  --card: var(--neutral-0);
+  --card-foreground: var(--neutral-900);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--neutral-900);
+  --primary: var(--brand-600);
+  --primary-foreground: var(--neutral-0);
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-800);
+  --secondary-hover: var(--neutral-200);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-600);
+  --accent: var(--brand-50);
+  --accent-foreground: var(--brand-800);
+  --destructive: var(--danger-700);
+  --destructive-foreground: var(--neutral-0);
+  --border: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --input: var(--neutral-300);
+  --ring: var(--brand-500);
+  --admin-bg: var(--neutral-50);
+  --admin-border: var(--neutral-200);
+  --overlay: rgb(12 17 26 / 0.42);
+  --code: #121a24;
+  --code-foreground: #e6edf5;
+  --selection-bg: var(--brand-50);
+  --selection-fg: var(--brand-700);
+
+  /* Backwards-compatible roles consumed by the existing ordinary frontend. */
+  --color-bg: var(--background);
+  --color-surface: var(--card);
+  --color-surface-soft: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--foreground);
+  --color-text-strong: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-muted-strong: var(--neutral-700);
+  --color-text-muted: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--brand-700);
+  --color-primary-soft: var(--accent);
+  --color-accent: #c2603a;
+  --color-success: var(--success-700);
+  --color-warning: var(--warning-700);
+  --color-danger: var(--destructive);
+  --color-admin-sidebar: var(--card);
+
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --shadow-control: 0 1px 2px rgb(22 29 40 / 0.05);
+  --shadow-popover: 0 12px 32px rgb(22 29 40 / 0.12), 0 2px 8px rgb(22 29 40 / 0.08);
+  --shadow-overlay: 0 24px 64px rgb(12 17 26 / 0.18), 0 4px 16px rgb(12 17 26 / 0.1);
+  --shadow-sm: var(--shadow-control);
+  --shadow-md: var(--shadow-popover);
+  --shadow-card: var(--shadow-control);
+  --motion-fast: 150ms;
+  --motion-standard: 200ms;
+  --motion-slow: 250ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --radius-token-sm: 0.25rem;
+  --radius-token-md: 0.375rem;
+  --radius-token-card: 0.5rem;
+  --radius-token-overlay: 0.625rem;
+  --radius-token-round: 999px;
+  --radius-sm: var(--radius-token-sm);
+  --radius-md: var(--radius-token-md);
+  --radius-lg: var(--radius-token-card);
+  --radius-xl: var(--radius-token-overlay);
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  border-color: var(--border);
 }
 
 html,
@@ -47,21 +136,25 @@ body,
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  color: var(--color-text);
+  min-width: 320px;
+  color: var(--foreground);
+  background: var(--background);
   font-family: var(--font-sans);
-  background: var(--color-bg);
 }
 
 ::selection {
-  background: rgba(37, 87, 214, 0.14);
+  color: var(--selection-fg);
+  background: var(--selection-bg);
 }
 
 button,
-textarea,
 input,
+textarea,
 select {
   font: inherit;
 }
@@ -73,13 +166,20 @@ button {
 button,
 input,
 textarea,
-select {
+select,
+a {
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    color 0.15s ease,
-    opacity 0.15s ease;
+    background-color var(--motion-standard) var(--ease-standard),
+    border-color var(--motion-standard) var(--ease-standard),
+    box-shadow var(--motion-standard) var(--ease-standard),
+    color var(--motion-standard) var(--ease-standard),
+    opacity var(--motion-standard) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 a {
@@ -95,12 +195,12 @@ svg {
 
 #app {
   min-height: 100vh;
-  font-weight: normal;
+  font-weight: 400;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
 }
 
 ::-webkit-scrollbar-track {
@@ -108,12 +208,12 @@ svg {
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(101, 116, 139, 0.24);
+  border-radius: var(--radius-token-round);
+  background: var(--neutral-300);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(101, 116, 139, 0.4);
+  background: var(--neutral-400);
 }
 
 @media (prefers-reduced-motion: reduce) {
