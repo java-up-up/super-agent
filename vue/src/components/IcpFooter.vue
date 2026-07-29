@@ -12,7 +12,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: var(--icp-footer-color, var(--color-muted));
+  color: var(--icp-footer-color, var(--muted-foreground));
   font-size: var(--icp-footer-font-size, 12px);
   line-height: 1.5;
 }
@@ -23,7 +23,7 @@
 }
 
 .icp-link:hover {
-  color: var(--color-primary);
+  color: var(--primary);
   text-decoration: underline;
 }
 </style>

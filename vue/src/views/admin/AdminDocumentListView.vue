@@ -1,210 +1,209 @@
 <template>
-  <section class="document-page">
-    <div class="top-grid">
-      <article class="panel-card upload-card">
-        <div class="panel-title">
-          <div>
-            <h3>上传资料并进入推荐流程</h3>
-          </div>
-        </div>
+  <section class="flex flex-col gap-5">
+    <PageHeader title="文档接入">
+      <template #actions>
+        <Button size="lg" class="rounded-md" type="button" @click="openUploadModal">
+          <ArrowUpTrayIcon data-icon="inline-start" aria-hidden="true" />
+          上传文档
+        </Button>
+      </template>
+    </PageHeader>
 
-        <div class="upload-grid">
-          <label class="field">
-            <span>文档名称</span>
-            <input v-model="uploadForm.documentName" type="text" placeholder="不填则使用原始文件名" />
-          </label>
-
-          <label class="field">
-            <span>知识域编码</span>
-            <input v-model="uploadForm.knowledgeScopeCode" type="text" placeholder="例如 operation_rule" />
-          </label>
-
-          <label class="field">
-            <span>知识域名称</span>
-            <input v-model="uploadForm.knowledgeScopeName" type="text" placeholder="例如 运营规则" />
-          </label>
-
-          <label class="field">
-            <span>业务分类</span>
-            <input v-model="uploadForm.businessCategory" type="text" placeholder="例如 手册 / 规则 / 介绍" />
-          </label>
-
-          <label class="field">
-            <span>文档标签</span>
-            <input v-model="uploadForm.documentTags" type="text" placeholder="多个标签用英文逗号分隔" />
-          </label>
-
-          <label class="field">
-            <span>选择文件</span>
-            <input ref="fileInputRef" type="file" class="file-input" @change="handleFileChange" />
-          </label>
-        </div>
-
-        <div class="upload-footer">
-          <div class="upload-hint">
-            <span>支持 PDF / DOC / DOCX / TXT / MD / HTML</span>
-            <strong>{{ uploadForm.file ? uploadForm.file.name : '尚未选择文件' }}</strong>
-          </div>
-
-          <div class="upload-actions">
-            <button class="ghost-button" type="button" @click="clearSelectedFile">清空</button>
-            <button class="primary-button" type="button" :disabled="uploading || !uploadForm.file" @click="submitUpload">
-              {{ uploading ? '上传中...' : '上传并解析' }}
-            </button>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel-card tips-card">
-        <div class="panel-title">
-          <div>
-            <h3>建议操作顺序</h3>
-          </div>
-        </div>
-
-        <ul class="tips-list">
-          <li>先上传文档，系统会异步解析并生成推荐切块策略。</li>
-          <li>点击任意文档，进入单独详情页查看解析结果、Chunk 和任务轨迹。</li>
-          <li>在详情页确认策略并构建索引，列表页专注浏览和筛选。</li>
-        </ul>
-      </article>
-    </div>
-
-    <div v-if="pageNotice.message" class="page-notice" :class="`page-notice-${pageNotice.type}`">
+    <div
+      v-if="pageNotice.message"
+      class="rounded-md border px-4 py-3 text-body-sm font-medium"
+      :class="{
+        'border-primary/10 bg-primary/[0.08] text-primary': pageNotice.type === 'info',
+        'glass-card text-foreground': pageNotice.type === 'success',
+        'border-destructive/20 bg-destructive/10 text-destructive': pageNotice.type === 'danger'
+      }"
+      role="status"
+    >
       {{ pageNotice.message }}
     </div>
 
-    <article class="panel-card list-card">
-      <div class="list-toolbar">
-        <div>
-          <h3>文档列表</h3>
-          <p class="toolbar-caption">共 {{ total }} 份文档，当前第 {{ currentPage }} 页。</p>
+    <ChildPageDialog
+      :open="uploadModalVisible"
+      title="上传资料并进入推荐流程"
+      description="支持 PDF / DOC / DOCX / TXT / MD / HTML"
+      close-label="关闭文档上传子页面"
+      @update:open="handleUploadOpen"
+    >
+      <div class="grid gap-4">
+            <div class="grid gap-3">
+              <div class="grid gap-2">
+                <Label class="field-label">知识域编码</Label>
+                <Input v-model="uploadForm.knowledgeScopeCode" class="h-9 text-sm" placeholder="例如 operation_rule" />
+              </div>
+              <div class="grid gap-2">
+                <Label class="field-label">知识域名称</Label>
+                <Input v-model="uploadForm.knowledgeScopeName" class="h-9 text-sm" placeholder="例如 运营规则" />
+              </div>
+              <div class="grid gap-2">
+                <Label class="field-label">文档名称</Label>
+                <Input v-model="uploadForm.documentName" class="h-9 text-sm" placeholder="不填则使用原始文件名" />
+              </div>
+              <div class="grid gap-2">
+                <Label class="field-label">业务分类</Label>
+                <Input v-model="uploadForm.businessCategory" class="h-9 text-sm" placeholder="例如 手册 / 规则 / 介绍" />
+              </div>
+              <div class="grid gap-2">
+                <Label class="field-label">文档标签</Label>
+                <Input v-model="uploadForm.documentTags" class="h-9 text-sm" placeholder="多个标签用英文逗号分隔" />
+              </div>
+              <div class="grid gap-2">
+                <Label class="field-label">选择文件</Label>
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.md,.html,.htm"
+                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-primary/[0.08] file:px-3 file:py-1 file:text-xs file:font-medium file:text-primary"
+                  @change="handleFileChange"
+                />
+              </div>
+              <div v-if="uploadErrors.length" class="grid gap-1 rounded-md border border-destructive/20 bg-destructive/[0.06] px-3 py-2 text-xs text-destructive" role="alert">
+                <span v-for="error in uploadErrors" :key="error">{{ error }}</span>
+              </div>
+              <div v-if="uploadForm.file" class="rounded-md border border-border bg-secondary/50 px-4 py-3">
+                <strong class="block break-all text-sm text-foreground">{{ uploadForm.file.name }}</strong>
+              </div>
+            </div>
+      </div>
+      <template #footer>
+        <div class="flex w-full items-center justify-end gap-2.5">
+          <Button variant="outline" size="lg" class="rounded-md" type="button" :disabled="uploading" @click="closeUploadModal">取消</Button>
+          <Button size="lg" class="rounded-md" type="button" :loading="uploading" loading-text="上传中" :disabled="!uploadForm.file" @click="submitUpload">上传并解析</Button>
         </div>
+      </template>
+    </ChildPageDialog>
 
-        <div class="list-actions">
-          <input
-            v-model="keyword"
-            class="search-input"
-            type="text"
-            placeholder="搜索文档名称或原始文件名"
-            @keydown.enter="submitSearch"
-          />
-          <button class="ghost-button" type="button" @click="submitSearch">搜索</button>
-        </div>
+    <FilterToolbar>
+      <div class="flex min-w-[18rem] flex-1 flex-col gap-1.5 max-sm:min-w-0">
+        <Input id="document-search" v-model="keyword" type="search" aria-label="搜索文档" placeholder="文档名称或原始文件名" @keydown.enter.prevent="submitSearch" />
+      </div>
+      <template #actions>
+        <span class="mr-1 text-caption tabular-nums text-muted-foreground">共 {{ total }} 条</span>
+        <Button v-if="hasActiveFilter" variant="ghost" size="sm" class="rounded-md" type="button" :disabled="listLoading" @click="resetSearch">清除筛选</Button>
+        <Button variant="outline" size="sm" class="rounded-md" type="button" :disabled="listLoading" @click="submitSearch">搜索</Button>
+        <Button variant="outline" size="sm" class="rounded-md" type="button" :loading="refreshing" loading-text="刷新中" @click="refreshDocuments">
+          <ArrowPathIcon v-if="!refreshing" data-icon="inline-start" aria-hidden="true" />
+          刷新
+        </Button>
+      </template>
+    </FilterToolbar>
+
+    <div v-if="listError && documents.length" class="glass-card rounded-md border px-4 py-3 text-body-sm text-foreground" role="status">
+      {{ listError }}；已保留上一次成功的列表。
+    </div>
+
+    <AsyncState v-if="initialLoading" state="loading" title="正在加载文档" description="列表结构保持稳定，数据返回后即可扫描。" />
+    <AsyncState v-else-if="listError && !documents.length" state="error" title="文档列表加载失败" :description="listError">
+      <template #action><Button variant="outline" size="sm" class="rounded-md" type="button" @click="refreshDocuments">重新加载</Button></template>
+    </AsyncState>
+    <AsyncState v-else-if="!documents.length" :state="hasActiveFilter ? 'filtered' : 'empty'" :title="hasActiveFilter ? '没有匹配文档' : '还没有文档'" :description="hasActiveFilter ? '调整关键词或清除筛选。' : '上传一份资料后，处理状态会在这里更新。'" />
+
+    <template v-else>
+      <DataTableShell class="hidden md:block" :busy="refreshing" caption="文档处理列表">
+        <thead>
+          <tr class="bg-muted">
+            <th scope="col" class="w-[36%] border-b border-border px-4 py-3 text-left text-caption font-semibold text-muted-foreground">文档</th>
+            <th scope="col" class="w-[16%] border-b border-border px-4 py-3 text-left text-caption font-semibold text-muted-foreground">主状态</th>
+            <th scope="col" class="w-[15%] border-b border-border px-4 py-3 text-left text-caption font-semibold text-muted-foreground">文件</th>
+            <th scope="col" class="w-[18%] border-b border-border px-4 py-3 text-left text-caption font-semibold text-muted-foreground">更新时间</th>
+            <th scope="col" class="w-[15%] border-b border-border px-4 py-3 text-right text-caption font-semibold text-muted-foreground">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in documents" :key="item.documentId" class="border-b border-border last:border-0 hover:bg-muted/60">
+            <td class="px-4 py-3 align-top">
+              <div class="block min-w-0" data-document-summary>
+                <strong class="block truncate text-body-sm font-semibold text-foreground">{{ item.documentName || item.originalFileName || '未命名文档' }}</strong>
+                <span class="mt-1 block truncate text-caption text-muted-foreground">{{ item.originalFileName || '-' }}</span>
+                <span class="mt-1 block truncate text-caption text-primary">{{ item.knowledgeScopeName || item.knowledgeScopeCode || '未分配知识域' }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-3 align-top">
+              <StatusBadge v-bind="resolveDocumentPrimaryStatus(item)" />
+              <p class="mt-1.5 text-micro leading-relaxed text-muted-foreground">{{ documentStageDetail(item) }}</p>
+            </td>
+            <td class="px-4 py-3 align-top">
+              <Badge variant="secondary">{{ item.fileTypeName || '-' }}</Badge>
+              <span class="mt-1.5 block text-caption tabular-nums text-muted-foreground">{{ formatFileSize(item.fileSize) }}</span>
+            </td>
+            <td class="px-4 py-3 align-top text-body-sm tabular-nums text-foreground">{{ formatDateTime(item.editTime) }}</td>
+            <td class="px-4 py-3 text-right align-top">
+              <div class="inline-flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" class="rounded-md" type="button" @click="openDocumentDetail(item.documentId)">查看</Button>
+                <Button variant="destructive" size="sm" class="rounded-md" type="button" :loading="isDeletingDocument(item.documentId)" loading-text="删除中" :disabled="!canDeleteDocument(item)" :title="buildDeleteTitle(item)" @click="deleteDocument(item)">删除</Button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </DataTableShell>
+
+      <div class="glass-card glass-edge divide-y divide-border overflow-hidden rounded-glass border md:hidden" aria-label="移动端文档列表">
+        <article v-for="item in documents" :key="item.documentId" class="py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div data-document-summary>
+                <h2 class="m-0 break-words text-body-sm font-semibold text-foreground">{{ item.documentName || item.originalFileName || '未命名文档' }}</h2>
+                <p class="mt-1 truncate text-caption text-muted-foreground">{{ item.originalFileName || '-' }}</p>
+              </div>
+            </div>
+            <StatusBadge v-bind="resolveDocumentPrimaryStatus(item)" />
+          </div>
+          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-caption">
+            <div><dt class="text-muted-foreground">知识域</dt><dd class="mt-0.5 truncate text-foreground">{{ item.knowledgeScopeName || item.knowledgeScopeCode || '未分配' }}</dd></div>
+            <div><dt class="text-muted-foreground">更新时间</dt><dd class="mt-0.5 tabular-nums text-foreground">{{ formatDateTime(item.editTime) }}</dd></div>
+            <div class="col-span-2"><dt class="text-muted-foreground">阶段详情</dt><dd class="mt-0.5 text-foreground">{{ documentStageDetail(item) }}</dd></div>
+          </dl>
+          <div class="mt-3 flex justify-end gap-2">
+            <Button variant="outline" size="lg" class="rounded-md" type="button" @click="openDocumentDetail(item.documentId)">查看</Button>
+            <Button variant="destructive" size="lg" class="rounded-md" type="button" :loading="isDeletingDocument(item.documentId)" loading-text="删除中" :disabled="!canDeleteDocument(item)" :title="buildDeleteTitle(item)" @click="deleteDocument(item)">删除</Button>
+          </div>
+        </article>
       </div>
 
-      <div class="table-summary">
-        <article class="table-stat-card">
-          <span>当前页文档</span>
-          <strong>{{ documents.length }}</strong>
-        </article>
-        <article class="table-stat-card">
-          <span>解析完成</span>
-          <strong>{{ visibleParseReadyCount }}</strong>
-        </article>
-        <article class="table-stat-card">
-          <span>策略确认</span>
-          <strong>{{ visibleStrategyReadyCount }}</strong>
-        </article>
-        <article class="table-stat-card">
-          <span>索引可用</span>
-          <strong>{{ visibleIndexReadyCount }}</strong>
-        </article>
-      </div>
-
-      <div class="document-table-shell">
-        <div v-if="!listLoading && !documents.length" class="empty-block">
-          还没有文档，先上传一份资料开始体验。
+      <nav class="flex items-center justify-between gap-4 border-t border-border pt-4 max-sm:flex-col max-sm:items-stretch" aria-label="文档列表分页">
+        <Button variant="outline" size="sm" class="rounded-md max-sm:h-11" type="button" :disabled="currentPage <= 1 || listLoading" @click="changePage(currentPage - 1)">上一页</Button>
+        <div class="text-center tabular-nums">
+          <strong class="block text-body-sm text-foreground">第 {{ currentPage }} / {{ totalPages }} 页</strong>
+          <span class="mt-1 block text-caption text-muted-foreground">共 {{ total }} 条文档</span>
         </div>
-        <div v-if="listLoading" class="empty-block">正在加载文档列表...</div>
-
-        <div v-if="!listLoading && documents.length" class="document-table-scroll">
-          <table class="document-table">
-            <thead>
-              <tr>
-                <th>文档</th>
-                <th>类型</th>
-                <th>大小</th>
-                <th>更新时间</th>
-                <th>解析</th>
-                <th>策略</th>
-                <th>索引</th>
-                <th class="document-table-action-head">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in documents" :key="item.documentId" class="document-table-row">
-                <td class="document-cell document-cell-main">
-                  <button class="document-link-button" type="button" @click="openDocumentDetail(item.documentId)">
-                    <strong>{{ item.documentName }}</strong>
-                    <span>{{ item.originalFileName }}</span>
-                  </button>
-                </td>
-                <td class="document-cell">
-                  <span class="table-chip">{{ item.fileTypeName || '-' }}</span>
-                </td>
-                <td class="document-cell">
-                  <strong>{{ formatFileSize(item.fileSize) }}</strong>
-                </td>
-                <td class="document-cell">
-                  <strong>{{ formatDateTime(item.editTime) }}</strong>
-                </td>
-                <td class="document-cell">
-                  <AdminStatusBadge :label="item.parseStatusName" :code="item.parseStatus" type="parse" />
-                </td>
-                <td class="document-cell">
-                  <AdminStatusBadge :label="item.strategyStatusName" :code="item.strategyStatus" type="strategy" />
-                </td>
-                <td class="document-cell">
-                  <AdminStatusBadge :label="item.indexStatusName" :code="item.indexStatus" type="index" />
-                </td>
-                <td class="document-cell document-cell-action">
-                  <div class="document-action-group">
-                    <button class="detail-link" type="button" @click="openDocumentDetail(item.documentId)">查看详情</button>
-                    <button
-                      class="danger-link"
-                      type="button"
-                      :disabled="!canDeleteDocument(item)"
-                      :title="buildDeleteTitle(item)"
-                      @click="deleteDocument(item)"
-                    >
-                      {{ isDeletingDocument(item.documentId) ? '删除中...' : '删除' }}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div v-if="documents.length" class="pagination-bar">
-        <button class="ghost-button" type="button" :disabled="currentPage <= 1 || listLoading" @click="changePage(currentPage - 1)">
-          上一页
-        </button>
-        <div class="pagination-status">
-          <strong>第 {{ currentPage }} / {{ totalPages }} 页</strong>
-          <span>共 {{ total }} 条文档</span>
-        </div>
-        <button class="ghost-button" type="button" :disabled="currentPage >= totalPages || listLoading" @click="changePage(currentPage + 1)">
-          下一页
-        </button>
-      </div>
-    </article>
+        <Button variant="outline" size="sm" class="rounded-md max-sm:h-11" type="button" :disabled="currentPage >= totalPages || listLoading" @click="changePage(currentPage + 1)">下一页</Button>
+      </nav>
+    </template>
   </section>
 </template>
 
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowPathIcon, ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
 import { APIError, manageApi } from '../../api/api'
-import AdminStatusBadge from '../../components/admin/AdminStatusBadge.vue'
 import { formatDateTime, formatFileSize, hasCode } from '../../utils/manageFormat'
+import { useConfirm } from '@/composables/useConfirm'
+const { confirm } = useConfirm()
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import AsyncState from '@/components/system/AsyncState.vue'
+import ChildPageDialog from '@/components/system/ChildPageDialog.vue'
+import DataTableShell from '@/components/system/DataTableShell.vue'
+import FilterToolbar from '@/components/system/FilterToolbar.vue'
+import PageHeader from '@/components/system/PageHeader.vue'
+import StatusBadge from '@/components/system/StatusBadge.vue'
+import { createLatestRequestGuard, resolveDocumentPrimaryStatus } from '@/features/admin/adminBehavior'
+import { buildUploadRequest, validateUploadDraft } from '@/features/admin/documentWorkflow'
 
 const router = useRouter()
+const requestGuard = createLatestRequestGuard()
 const OPERATOR_ID = '10001'
 const DEFAULT_PAGE_SIZE = 12
 
+const uploadModalVisible = ref(false)
+const uploadErrors = ref([])
 const uploadForm = reactive({
   documentName: '',
   knowledgeScopeCode: '',
@@ -213,38 +212,48 @@ const uploadForm = reactive({
   documentTags: '',
   file: null
 })
+
+function openUploadModal() {
+  uploadErrors.value = []
+  uploadModalVisible.value = true
+}
+
+function closeUploadModal() {
+  uploadModalVisible.value = false
+  uploadErrors.value = []
+  clearSelectedFile()
+}
+
+function handleUploadOpen(value) {
+  if (value) uploadModalVisible.value = true
+  else closeUploadModal()
+}
+
 const fileInputRef = ref(null)
 const uploading = ref(false)
 const listLoading = ref(false)
+const listInitialized = ref(false)
+const listError = ref('')
 const keyword = ref('')
+const appliedKeyword = ref('')
 const documents = ref([])
 const currentPage = ref(1)
 const pageSize = ref(DEFAULT_PAGE_SIZE)
 const total = ref(0)
 const deletingDocumentId = ref('')
-const pageNotice = reactive({
-  type: 'info',
-  message: ''
-})
+const pageNotice = reactive({ type: 'info', message: '' })
 
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil((total.value || 0) / pageSize.value))
-})
-const visibleParseReadyCount = computed(() => documents.value.filter((item) => hasCode(item.parseStatus, 3)).length)
-const visibleStrategyReadyCount = computed(() => documents.value.filter((item) => hasCode(item.strategyStatus, 3)).length)
-const visibleIndexReadyCount = computed(() => documents.value.filter((item) => hasCode(item.indexStatus, 3)).length)
+const totalPages = computed(() => Math.max(1, Math.ceil((total.value || 0) / pageSize.value)))
+const initialLoading = computed(() => listLoading.value && !listInitialized.value)
+const refreshing = computed(() => listLoading.value && listInitialized.value)
+const hasActiveFilter = computed(() => Boolean(appliedKeyword.value))
 
-function showNotice(message, type = 'info') {
-  pageNotice.type = type
-  pageNotice.message = message
-}
-
-function clearNotice() {
-  pageNotice.message = ''
-}
+function showNotice(message, type = 'info') { pageNotice.type = type; pageNotice.message = message }
+function clearNotice() { pageNotice.message = '' }
 
 function handleFileChange(event) {
   uploadForm.file = event.target.files?.[0] || null
+  uploadErrors.value = validateUploadDraft(uploadForm).errors
 }
 
 function clearSelectedFile() {
@@ -254,159 +263,130 @@ function clearSelectedFile() {
   uploadForm.knowledgeScopeName = ''
   uploadForm.businessCategory = ''
   uploadForm.documentTags = ''
-  if (fileInputRef.value) {
-    fileInputRef.value.value = ''
-  }
+  if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
 async function loadDocuments(page = currentPage.value) {
+  const requestId = requestGuard.begin()
   listLoading.value = true
-
+  listError.value = ''
   try {
-    const data = await manageApi.queryDocumentPage({
-      pageNo: page,
-      pageSize: pageSize.value,
-      keyword: keyword.value.trim()
-    })
+    const data = await manageApi.queryDocumentPage({ pageNo: page, pageSize: pageSize.value, keyword: appliedKeyword.value })
+    if (!requestGuard.isCurrent(requestId)) return
     documents.value = Array.isArray(data?.records) ? data.records : []
     currentPage.value = Number(data?.pageNo || page)
     pageSize.value = Number(data?.pageSize || pageSize.value)
     total.value = Number(data?.total || 0)
+    listInitialized.value = true
   } catch (error) {
+    if (!requestGuard.isCurrent(requestId)) return
     console.error('加载文档列表失败', error)
-    showNotice(normalizeError(error, '加载文档列表失败'), 'danger')
-    documents.value = []
+    listError.value = normalizeError(error, '加载文档列表失败')
+    listInitialized.value = true
   } finally {
-    listLoading.value = false
+    if (requestGuard.isCurrent(requestId)) listLoading.value = false
   }
 }
 
 function submitSearch() {
+  appliedKeyword.value = keyword.value.trim()
   currentPage.value = 1
   loadDocuments(1)
 }
 
+function resetSearch() {
+  keyword.value = ''
+  appliedKeyword.value = ''
+  currentPage.value = 1
+  loadDocuments(1)
+}
+
+function refreshDocuments() {
+  loadDocuments(currentPage.value)
+}
+
 function changePage(page) {
-  if (page < 1 || page > totalPages.value || page === currentPage.value) {
-    return
-  }
+  if (page < 1 || page > totalPages.value || page === currentPage.value) return
   loadDocuments(page)
 }
 
-function openDocumentDetail(documentId) {
-  router.push({
-    name: 'AdminDocumentDetail',
-    params: {
-      documentId: String(documentId)
-    }
-  })
+function documentTarget(documentId, query = {}) {
+  return { name: 'AdminDocumentDetail', params: { documentId: String(documentId) }, query }
 }
 
-function isDeletingDocument(documentId) {
-  return String(deletingDocumentId.value || '') === String(documentId || '')
+function openDocumentDetail(documentId, query = {}) {
+  router.push(documentTarget(documentId, query))
 }
+
+function documentStageDetail(item) {
+  return [item.parseStatusName || '解析未开始', item.strategyStatusName || '策略未确认', item.indexStatusName || '索引未构建'].join(' · ')
+}
+
+function isDeletingDocument(documentId) { return String(deletingDocumentId.value || '') === String(documentId || '') }
 
 function hasRunningDocumentTask(item) {
-  return hasCode(item?.latestTaskStatus, 1)
-    || hasCode(item?.latestTaskStatus, 2)
-    || hasCode(item?.parseStatus, 2)
-    || hasCode(item?.indexStatus, 2)
+  return hasCode(item?.latestTaskStatus, 1) || hasCode(item?.latestTaskStatus, 2)
+    || hasCode(item?.parseStatus, 2) || hasCode(item?.indexStatus, 2)
 }
 
 function canDeleteDocument(item) {
-  if (!item?.documentId) {
-    return false
-  }
-  return !listLoading.value && !deletingDocumentId.value && !hasRunningDocumentTask(item)
+  return !!item?.documentId && !listLoading.value && !deletingDocumentId.value && !hasRunningDocumentTask(item)
 }
 
 function buildDeleteTitle(item) {
-  if (hasRunningDocumentTask(item)) {
-    return '请等待当前任务完成后再删除'
-  }
-  if (deletingDocumentId.value) {
-    return '当前有文档正在删除'
-  }
+  if (hasRunningDocumentTask(item)) return '请等待当前任务完成后再删除'
+  if (deletingDocumentId.value) return '当前有文档正在删除'
   return '删除文档以及关联的索引、存储文件'
 }
 
 async function submitUpload() {
-  if (!uploadForm.file) {
-    showNotice('请先选择要上传的文档。', 'danger')
+  if (uploading.value) return
+  const validation = validateUploadDraft(uploadForm)
+  if (!validation.valid) {
+    uploadErrors.value = validation.errors
+    showNotice(validation.errors[0], 'danger')
     return
   }
-
-  uploading.value = true
-  clearNotice()
-
+  uploading.value = true; clearNotice()
   try {
-    const result = await manageApi.uploadDocument({
-      file: uploadForm.file,
-      documentName: uploadForm.documentName.trim(),
-      operatorId: OPERATOR_ID,
-      knowledgeScopeCode: uploadForm.knowledgeScopeCode.trim(),
-      knowledgeScopeName: uploadForm.knowledgeScopeName.trim(),
-      businessCategory: uploadForm.businessCategory.trim(),
-      documentTags: uploadForm.documentTags.trim()
-    })
-    clearSelectedFile()
+    const result = await manageApi.uploadDocument(buildUploadRequest(uploadForm, OPERATOR_ID))
+    closeUploadModal()
     showNotice(`文档已上传，任务 ${result.taskId} 已进入解析与策略推荐队列。`, 'success')
+    keyword.value = ''
+    appliedKeyword.value = ''
     await loadDocuments(1)
     openDocumentDetail(result.documentId)
   } catch (error) {
     console.error('上传文档失败', error)
-    showNotice(normalizeError(error, '上传文档失败'), 'danger')
+    uploadErrors.value = [normalizeError(error, '上传文档失败')]
+    showNotice(uploadErrors.value[0], 'danger')
   } finally {
     uploading.value = false
   }
 }
 
 async function deleteDocument(item) {
-  if (!item?.documentId) {
-    return
-  }
-
-  if (hasRunningDocumentTask(item)) {
-    showNotice('当前文档存在进行中的任务，请等待任务完成后再删除。', 'danger')
-    return
-  }
-
+  if (!item?.documentId) return
+  if (hasRunningDocumentTask(item)) { showNotice('当前文档存在进行中的任务，请等待任务完成后再删除。', 'danger'); return }
   const documentId = String(item.documentId)
   const documentName = item.documentName || item.originalFileName || documentId
-  const confirmed = window.confirm(
-    `确认删除文档《${documentName}》吗？\n\n将同时删除 MySQL 记录、向量库数据和 MinIO 存储文件，删除后不可恢复。`
-  )
-  if (!confirmed) {
-    return
-  }
-
-  deletingDocumentId.value = documentId
-  clearNotice()
-
+  if (!await confirm(`确认删除文档《${documentName}》吗？\n\n将同时删除 MySQL 记录、向量库数据和 MinIO 存储文件，删除后不可恢复。`, '确认删除')) return
+  deletingDocumentId.value = documentId; clearNotice()
   try {
-    await manageApi.deleteDocument({
-      documentId
-    })
-    const nextPage = documents.value.length === 1 && currentPage.value > 1
-      ? currentPage.value - 1
-      : currentPage.value
+    await manageApi.deleteDocument({ documentId })
+    const nextPage = documents.value.length === 1 && currentPage.value > 1 ? currentPage.value - 1 : currentPage.value
     await loadDocuments(nextPage)
     showNotice(`文档《${documentName}》已删除，关联数据已同步清理。`, 'success')
   } catch (error) {
-    console.error('删除文档失败', error)
-    showNotice(normalizeError(error, '删除文档失败'), 'danger')
+    console.error('删除文档失败', error); showNotice(normalizeError(error, '删除文档失败'), 'danger')
   } finally {
     deletingDocumentId.value = ''
   }
 }
 
 function normalizeError(error, fallbackMessage) {
-  if (error instanceof APIError && error.message) {
-    return error.message
-  }
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
+  if (error instanceof APIError && error.message) return error.message
+  if (error instanceof Error && error.message) return error.message
   return fallbackMessage
 }
 
@@ -414,437 +394,3 @@ onMounted(() => {
   loadDocuments()
 })
 </script>
-
-<style scoped>
-.document-page {
-  --color-border: var(--border);
-  --color-surface-soft: var(--muted);
-  --radius-lg: var(--radius-token-card);
-  --radius-md: var(--radius-token-md);
-  --radius-sm: var(--radius-token-sm);
-  --shadow-sm: var(--shadow-control);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.top-grid {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 16px;
-  align-items: stretch;
-}
-
-.panel-card {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 20px;
-}
-
-.panel-title,
-.list-toolbar,
-.upload-actions,
-.list-actions,
-.pagination-bar {
-  display: flex;
-  align-items: center;
-}
-
-.panel-title,
-.list-toolbar,
-.pagination-bar {
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-title h3,
-.list-toolbar h3 {
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.toolbar-caption {
-  margin: 8px 0 0;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.upload-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.field span {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-muted-strong);
-}
-
-.field input,
-.search-input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  background: #ffffff;
-  outline: none;
-  color: var(--color-text);
-}
-
-.field input:focus,
-.search-input:focus {
-  border-color: rgba(178, 31, 196, 0.28);
-  box-shadow: 0 0 0 3px rgba(178, 31, 196, 0.08);
-}
-
-.upload-hint {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-  flex: 1;
-  min-width: 0;
-}
-
-.upload-hint span {
-  display: block;
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.upload-hint strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-text-strong);
-  word-break: break-all;
-}
-
-.upload-actions,
-.list-actions {
-  gap: 12px;
-}
-
-.upload-footer {
-  margin-top: 14px;
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.upload-actions {
-  margin-top: 0;
-  justify-content: flex-end;
-  flex: none;
-  align-self: center;
-}
-
-.tips-list {
-  margin: 12px 0 0;
-  padding-left: 18px;
-  color: var(--color-muted-strong);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.page-notice {
-  padding: 14px 18px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  border: 1px solid transparent;
-}
-
-.page-notice-info {
-  background: rgba(178, 31, 196, 0.08);
-  color: #8c168d;
-  border-color: rgba(178, 31, 196, 0.1);
-}
-
-.page-notice-success {
-  background: rgba(18, 125, 74, 0.1);
-  color: #127d4a;
-  border-color: rgba(18, 125, 74, 0.12);
-}
-
-.page-notice-danger {
-  background: rgba(177, 47, 38, 0.1);
-  color: #b12f26;
-  border-color: rgba(177, 47, 38, 0.12);
-}
-
-.table-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.table-stat-card {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.table-stat-card span {
-  display: block;
-  font-size: 12px;
-  color: var(--color-muted);
-}
-
-.table-stat-card strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-text-strong);
-  font-size: 24px;
-  line-height: 1.15;
-}
-
-.document-table-shell {
-  margin-top: 14px;
-  min-height: 420px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: #fff;
-}
-
-.document-table-scroll {
-  overflow-x: auto;
-}
-
-.document-table {
-  width: 100%;
-  min-width: 1080px;
-  border-collapse: collapse;
-}
-
-.document-table thead th {
-  padding: 14px 16px;
-  background: var(--color-surface-soft);
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.document-table-row {
-  transition: background-color 0.22s ease;
-}
-
-.document-table-row:hover {
-  background: rgba(178, 31, 196, 0.04);
-}
-
-.document-table-row td {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
-}
-
-.document-table-row:last-child td {
-  border-bottom: none;
-}
-
-.document-cell {
-  color: var(--color-muted-strong);
-}
-
-.document-cell strong {
-  display: block;
-  color: var(--color-text-strong);
-  line-height: 1.45;
-}
-
-.document-cell-main {
-  min-width: 0;
-}
-
-.document-link-button {
-  width: 100%;
-  padding: 0;
-  border: none;
-  background: transparent;
-  text-align: left;
-  color: inherit;
-}
-
-.document-link-button strong {
-  font-size: 16px;
-}
-
-.document-link-button span {
-  display: block;
-  margin-top: 6px;
-  color: var(--color-muted);
-  line-height: 1.65;
-  word-break: break-all;
-}
-
-.table-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.document-cell-action,
-.document-table-action-head {
-  text-align: right;
-}
-
-.document-action-group {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.detail-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 108px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  background: rgba(178, 31, 196, 0.08);
-  border: 1px solid rgba(178, 31, 196, 0.12);
-  color: #8c168d;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.danger-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 88px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  background: rgba(177, 47, 38, 0.08);
-  border: 1px solid rgba(177, 47, 38, 0.12);
-  color: #b12f26;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.detail-link:hover,
-.document-link-button:hover strong {
-  color: var(--color-primary-strong);
-}
-
-.danger-link:hover:not(:disabled) {
-  color: #7f331f;
-}
-
-.danger-link:disabled,
-.detail-link:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.pagination-bar {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--color-border);
-}
-
-.pagination-status {
-  text-align: center;
-}
-
-.pagination-status strong {
-  display: block;
-  color: var(--color-text-strong);
-}
-
-.pagination-status span {
-  display: block;
-  margin-top: 6px;
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.empty-block {
-  min-height: 260px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: var(--color-muted);
-  padding: 36px 20px;
-}
-
-.primary-button,
-.ghost-button {
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font-weight: 600;
-}
-
-.primary-button {
-  color: #fff;
-  background: var(--color-primary);
-}
-
-.ghost-button {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-  border-color: transparent;
-}
-
-.ghost-button:hover:not(:disabled) {
-  background: rgba(178, 31, 196, 0.14);
-}
-
-.file-input::file-selector-button {
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  margin-right: 12px;
-  background: rgba(178, 31, 196, 0.08);
-  color: #8c168d;
-}
-
-@media (max-width: 860px) {
-  .upload-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .upload-footer {
-    flex-direction: column;
-  }
-
-  .list-toolbar,
-  .pagination-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .table-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-</style>

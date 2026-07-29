@@ -1,962 +1,526 @@
 <template>
-  <section class="document-detail-page">
-    <transition name="drawer-fade">
-      <div v-if="logDrawerOpen" class="drawer-overlay" @click="closeLogDrawer"></div>
-    </transition>
-    <transition name="drawer-fade">
-      <div v-if="chunkDetailDrawerOpen" class="drawer-overlay" @click="closeChunkDetailDrawer"></div>
-    </transition>
+  <section class="flex flex-col gap-4">
 
-    <transition name="build-mask-fade">
-      <div v-if="showBuildBlockingOverlay" class="build-overlay">
-        <div class="build-overlay-card">
-          <div class="build-overlay-head">
-            <span class="build-overlay-spinner" aria-hidden="true"></span>
-            <div>
-              <h3>{{ buildOverlayTitle }}</h3>
-              <p class="build-overlay-text">{{ buildOverlayDescription }}</p>
-            </div>
+    <ChildPageDialog
+      :open="showBuildBlockingOverlay"
+      :title="buildOverlayTitle"
+      :description="buildOverlayDescription"
+      :show-close="false"
+      close-label="构建进行中"
+      @update:open="handleBuildDialogOpen"
+    >
+        <div class="grid gap-4">
+          <div class="mb-4 flex items-center gap-4">
+            <span class="build-overlay-spinner shrink-0" aria-hidden="true"></span>
+            <div><h3 class="text-base font-semibold text-foreground">{{ buildOverlayTitle }}</h3><p class="mt-1 text-compact text-[var(--muted-foreground)]">{{ buildOverlayDescription }}</p></div>
           </div>
-
-          <div class="build-overlay-task-meta">
-            <span>任务 {{ buildTaskSnapshot?.taskId || activeBuildTaskId || '创建中' }}</span>
-            <span>当前阶段 {{ activeBuildStageLabel || '准备启动' }}</span>
-          </div>
-
-          <div class="build-overlay-stage-list">
-            <article
-              v-for="stage in buildStageItems"
-              :key="`overlay-stage-${stage.code}`"
-              class="build-overlay-stage"
-              :class="`build-overlay-stage-${stage.status}`"
-            >
-              <span class="build-overlay-stage-icon">
-                <span v-if="stage.status === 'current'" class="stage-spinner" aria-hidden="true"></span>
-                <span v-else>{{ stage.order }}</span>
-              </span>
-              <div class="build-overlay-stage-copy">
-                <strong>{{ stage.label }}</strong>
-                <span>{{ stage.statusLabel }}</span>
-              </div>
+          <div class="mb-4 flex flex-wrap gap-3 text-xs text-muted-foreground"><span>任务 {{ buildTaskSnapshot?.taskId || activeBuildTaskId || '创建中' }}</span><span>当前阶段 {{ activeBuildStageLabel || '准备启动' }}</span></div>
+          <div class="grid grid-cols-2 gap-2">
+            <article v-for="stage in buildStageItems" :key="`overlay-stage-${stage.code}`" class="flex items-center gap-3 rounded-lg border p-3" :class="buildProgressVisual(stage.status).card">
+              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold" :class="buildProgressVisual(stage.status).marker"><span v-if="stage.status === 'current'" class="stage-spinner" aria-hidden="true"></span><CheckCircleIcon v-else-if="['done','completed'].includes(stage.status)" class="h-4 w-4" /><span v-else>{{ stage.order }}</span></span>
+              <div><strong class="block text-compact text-foreground">{{ stage.label }}</strong><span class="text-xs text-muted-foreground">{{ stage.statusLabel }}</span></div>
             </article>
           </div>
-
-          <p class="build-overlay-tip">执行期间页面已暂时锁定，避免重复发起构建或误改当前策略链路。</p>
+          <p class="mt-4 text-xs text-muted-foreground">执行期间页面已暂时锁定，避免重复发起构建或误改当前策略链路。</p>
         </div>
-      </div>
-    </transition>
+    </ChildPageDialog>
 
-    <transition name="drawer-slide">
-      <aside v-if="logDrawerOpen" class="log-drawer">
-        <div class="drawer-header">
-          <div>
-            <h3>任务执行详情</h3>
-            <p class="drawer-subtitle">
-              任务 {{ documentDetail?.latestTaskId || '-' }} · {{ documentDetail?.latestTaskTypeName || '暂无任务类型' }}
-            </p>
+    <DocumentTaskHistoryDialog
+      :open="logDrawerOpen"
+      :document-detail="documentDetail"
+      :logs="taskLogs"
+      :loading="logLoading"
+      @update:open="handleLogDialogOpen"
+    />
+
+    <ChildPageDialog
+      :open="chunkDetailDrawerOpen"
+      title="切块详情"
+      :description="chunkDetail?.chunk ? `子块 C#${chunkDetail.chunk.chunkNo || '-'} · 父块 P#${chunkDetail.parentBlock?.parentBlockNo || '-'}` : '正在读取切块详情'"
+      size="default"
+      close-label="关闭切块详情"
+      @update:open="handleChunkDialogOpen"
+    >
+        <div v-if="chunkDetailLoading" class="flex-1 py-8 text-center text-sm text-muted-foreground">正在加载 chunk 详情...</div>
+        <div v-else-if="!chunkDetail?.chunk" class="flex-1 py-8 text-center text-sm text-muted-foreground">当前没有可展示的 chunk 详情。</div>
+        <div v-else>
+          <div class="mb-4 flex flex-wrap gap-3">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground"><span>当前子块</span><strong class="text-foreground">C#{{ chunkDetail.chunk.chunkNo || '-' }}</strong></div>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground"><span>所属父块</span><strong class="text-foreground">P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</strong></div>
+            <div class="flex items-center gap-2 text-xs text-muted-foreground"><span>同父子块</span><strong class="text-foreground">{{ chunkDetail.parentBlock?.childCount || chunkDetail.siblingChunks?.length || 0 }}</strong></div>
           </div>
-          <button class="icon-button" type="button" aria-label="关闭任务执行详情" @click="closeLogDrawer">
-            <XMarkIcon class="drawer-icon" />
-          </button>
-        </div>
-
-        <div class="drawer-summary">
-          <div class="summary-chip">
-            <span>当前状态</span>
-            <AdminStatusBadge
-              :label="documentDetail?.latestTaskStatusName || '暂无状态'"
-              :code="documentDetail?.latestTaskStatus"
-              type="task"
-            />
+          <div class="pipeline-tone-child mb-4 rounded-lg border p-4" style="background: var(--pl-bg); border-color: var(--pl-border)">
+            <div class="mb-2 flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="rounded px-2 py-0.5 text-micro font-bold text-white" style="background: var(--pl-solid)">Child Evidence</span><h4 class="text-sm font-semibold text-foreground">当前子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</h4></div><span class="text-xs text-muted-foreground">{{ build子块RelationText(chunkDetail.chunk) }}</span></div>
+            <div class="mb-2 flex flex-wrap gap-3 text-xs text-muted-foreground"><span>章节：{{ chunkDetail.chunk.sectionPath || '未识别章节' }}</span><span>字符：{{ formatCount(chunkDetail.chunk.charCount) }}</span><span>Token：{{ formatCount(chunkDetail.chunk.tokenCount) }}</span></div>
+            <pre class="overflow-auto whitespace-pre-wrap break-words text-compact text-foreground">{{ chunkDetail.chunk.chunkText }}</pre>
           </div>
-          <div class="summary-chip">
-            <span>索引状态</span>
-            <AdminStatusBadge
-              :label="documentDetail?.indexStatusName || '暂无状态'"
-              :code="documentDetail?.indexStatus"
-              type="index"
-            />
+          <div v-if="chunkDetail.parentBlock" class="pipeline-tone-parent mb-4 rounded-lg border p-4" style="background: var(--pl-bg); border-color: var(--pl-border)">
+            <div class="mb-2 flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="rounded px-2 py-0.5 text-micro font-bold text-white" style="background: var(--pl-solid)">Parent Context</span><h4 class="text-sm font-semibold text-foreground">所属父块 P#{{ chunkDetail.parentBlock.parentBlockNo || '-' }}</h4></div><span class="text-xs text-muted-foreground">子块范围 C#{{ chunkDetail.parentBlock.start子块No || '-' }} - C#{{ chunkDetail.parentBlock.end子块No || '-' }}</span></div>
+            <div class="mb-2 flex flex-wrap gap-3 text-xs text-muted-foreground"><span>章节：{{ chunkDetail.parentBlock.sectionPath || '未识别章节' }}</span><span>字符：{{ formatCount(chunkDetail.parentBlock.charCount) }}</span><span>Token：{{ formatCount(chunkDetail.parentBlock.tokenCount) }}</span></div>
+            <pre class="overflow-auto whitespace-pre-wrap break-words text-compact text-foreground">{{ chunkDetail.parentBlock.parentText }}</pre>
           </div>
-        </div>
-
-        <div v-if="logLoading" class="drawer-empty">正在加载任务日志...</div>
-        <div v-else-if="!taskLogs.length" class="drawer-empty">当前任务还没有日志记录。</div>
-
-        <div v-else class="drawer-timeline">
-          <article v-for="log in taskLogs" :key="log.id" class="drawer-log-item">
-            <div class="drawer-log-node"></div>
-            <div class="drawer-log-body">
-              <div class="drawer-log-head">
-                <strong>{{ log.stageTypeName }} · {{ log.eventTypeName }}</strong>
-                <span>{{ formatDateTime(log.createTime) }}</span>
-              </div>
-              <p>{{ log.content }}</p>
-              <pre v-if="log.detailJson" class="drawer-log-detail">{{ log.detailJson }}</pre>
-            </div>
-          </article>
-        </div>
-      </aside>
-    </transition>
-    <transition name="drawer-slide">
-      <aside v-if="chunkDetailDrawerOpen" class="log-drawer chunk-detail-drawer">
-        <div class="drawer-header">
-          <div>
-            <h3>Chunk 详情</h3>
-            <p class="drawer-subtitle">
-              <template v-if="chunkDetail?.chunk">
-                子块 C#{{ chunkDetail.chunk.chunkNo || '-' }} · 父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}
-              </template>
-              <template v-else>
-                正在读取切块详情
-              </template>
-            </p>
-          </div>
-          <button class="icon-button" type="button" aria-label="关闭 Chunk 详情" @click="closeChunkDetailDrawer">
-            <XMarkIcon class="drawer-icon" />
-          </button>
-        </div>
-
-        <div v-if="chunkDetailLoading" class="drawer-empty">正在加载 chunk 详情...</div>
-        <div v-else-if="!chunkDetail?.chunk" class="drawer-empty">当前没有可展示的 chunk 详情。</div>
-        <template v-else>
-          <div class="drawer-summary">
-            <div class="summary-chip summary-chip-child">
-              <span>当前子块</span>
-              <strong>C#{{ chunkDetail.chunk.chunkNo || '-' }}</strong>
-            </div>
-            <div class="summary-chip summary-chip-parent">
-              <span>所属父块</span>
-              <strong>P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</strong>
-            </div>
-            <div class="summary-chip">
-              <span>同父子块</span>
-              <strong>{{ chunkDetail.parentBlock?.childCount || chunkDetail.siblingChunks?.length || 0 }}</strong>
-            </div>
-          </div>
-
-          <section class="chunk-detail-section chunk-detail-section-current">
-            <div class="chunk-detail-head">
-              <div class="chunk-detail-title-group">
-                <span class="chunk-kind-badge chunk-kind-badge-child">Child Evidence</span>
-                <h4>当前子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</h4>
-              </div>
-              <span>{{ buildChunkRelationText(chunkDetail.chunk) }}</span>
-            </div>
-            <div class="chunk-detail-meta">
-              <span>章节：{{ chunkDetail.chunk.sectionPath || '未识别章节' }}</span>
-              <span>字符：{{ formatCount(chunkDetail.chunk.charCount) }}</span>
-              <span>Token：{{ formatCount(chunkDetail.chunk.tokenCount) }}</span>
-            </div>
-            <pre class="chunk-detail-text">{{ chunkDetail.chunk.chunkText }}</pre>
-          </section>
-
-          <section
-            ref="parentBlockSectionRef"
-            class="chunk-detail-section chunk-detail-section-parent"
-            :class="{ 'chunk-detail-section-focused': chunkDetailFocusMode === 'parent' }"
-            v-if="chunkDetail.parentBlock"
-          >
-            <div class="chunk-detail-head">
-              <div class="chunk-detail-title-group">
-                <span class="chunk-kind-badge chunk-kind-badge-parent">Parent Context</span>
-                <h4>所属父块 P#{{ chunkDetail.parentBlock.parentBlockNo || '-' }}</h4>
-              </div>
-              <span>子块范围 C#{{ chunkDetail.parentBlock.startChunkNo || '-' }} - C#{{ chunkDetail.parentBlock.endChunkNo || '-' }}</span>
-            </div>
-            <div class="chunk-detail-meta">
-              <span>章节：{{ chunkDetail.parentBlock.sectionPath || '未识别章节' }}</span>
-              <span>字符：{{ formatCount(chunkDetail.parentBlock.charCount) }}</span>
-              <span>Token：{{ formatCount(chunkDetail.parentBlock.tokenCount) }}</span>
-            </div>
-            <pre class="chunk-detail-text parent-block-text">{{ chunkDetail.parentBlock.parentText }}</pre>
-          </section>
-
-          <section class="chunk-detail-section" v-if="Array.isArray(chunkDetail.siblingChunks) && chunkDetail.siblingChunks.length">
-            <div class="chunk-detail-head">
-              <h4>同父子块关系</h4>
-              <span>点击可切换查看其他子块</span>
-            </div>
-            <div class="chunk-relation-legend">
-              <span>父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }}</span>
-              <span>当前命中子块 C#{{ chunkDetail.chunk.chunkNo || '-' }}</span>
-              <span>同父共 {{ chunkDetail.siblingChunks.length }} 个子块</span>
-            </div>
-            <p class="chunk-relation-note">
-              当前父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }} 内包含
-              {{ formatChunkCodeList(chunkDetail.siblingChunks) }} 这些子块，当前命中的是
-              C#{{ chunkDetail.chunk.chunkNo || '-' }}。
-            </p>
-            <div class="chunk-relation-track">
+          <div v-if="Array.isArray(chunkDetail.siblingChunks) && chunkDetail.siblingChunks.length" class="pipeline-tone-child rounded-lg border p-4" style="background: var(--pl-bg); border-color: var(--pl-border)">
+            <div class="mb-2 flex items-center justify-between gap-2"><h4 class="text-sm font-semibold text-foreground">同父子块关系</h4><span class="text-xs text-muted-foreground">点击可切换查看其他子块</span></div>
+            <p class="mb-3 text-xs text-muted-foreground">当前父块 P#{{ chunkDetail.parentBlock?.parentBlockNo || '-' }} 内包含 {{ formatChunkCodeList(chunkDetail.siblingChunks) }} 这些子块，当前命中的是 C#{{ chunkDetail.chunk.chunkNo || '-' }}。</p>
+            <div class="mb-3 flex flex-wrap items-center gap-2">
               <template v-for="(item, index) in chunkDetail.siblingChunks" :key="`track-${item.chunkId}`">
-                <button
-                  class="chunk-relation-node"
-                  :class="{ active: isCurrentChunk(item) }"
-                  type="button"
-                  @click="openChunkDetail(item.chunkId)"
-                >
-                  <strong>C#{{ item.chunkNo || '-' }}</strong>
-                  <span>{{ buildSiblingOrderLabel(index, chunkDetail.siblingChunks.length) }}</span>
-                </button>
-                <div
-                  v-if="index < chunkDetail.siblingChunks.length - 1"
-                  class="chunk-relation-line"
-                  :class="{ active: isCurrentChunk(item) || isCurrentChunk(chunkDetail.siblingChunks[index + 1]) }"
-                ></div>
+                <Button variant="ghost" size="sm" class="flex flex-col items-center rounded-lg border px-3 py-2 text-center !h-auto" :class="isCurrent子块(item) ? '' : 'border-border bg-card'" :style="isCurrent子块(item) ? 'background: var(--pl-bg); border-color: var(--pl-solid)' : ''" type="button" @click="open子块Detail(item.chunkId)"><strong class="text-compact text-foreground">C#{{ item.chunkNo || '-' }}</strong><span class="text-micro text-muted-foreground">{{ buildSiblingOrderLabel(index, chunkDetail.siblingChunks.length) }}</span></Button>
+                <div v-if="index < chunkDetail.siblingChunks.length - 1" class="h-0.5 w-4 rounded bg-border"></div>
               </template>
             </div>
-            <div class="sibling-chunk-list">
-              <button
-                v-for="item in chunkDetail.siblingChunks"
-                :key="`sibling-${item.chunkId}`"
-                class="sibling-chunk-card"
-                :class="{ active: normalizeCode(item.chunkId) === normalizeCode(chunkDetail.chunk.chunkId) }"
-                type="button"
-                @click="openChunkDetail(item.chunkId)"
-              >
-                <div class="sibling-chunk-head">
-                  <strong>子块 C#{{ item.chunkNo || '-' }}</strong>
-                  <span>{{ buildChunkRelationText(item) }}</span>
-                </div>
-                <p>{{ item.sectionPath || '未识别章节' }}</p>
-                <span>{{ item.chunkText }}</span>
-              </button>
+            <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+              <Button v-for="item in chunkDetail.siblingChunks" :key="`sibling-${item.chunkId}`" variant="ghost" size="sm" class="grid gap-1 rounded-lg border p-3 text-left !h-auto !whitespace-normal" :class="normalizeCode(item.chunkId) === normalizeCode(chunkDetail.chunk.chunkId) ? '' : 'border-border bg-card'" :style="normalizeCode(item.chunkId) === normalizeCode(chunkDetail.chunk.chunkId) ? 'background: var(--pl-bg); border-color: var(--pl-border)' : ''" type="button" @click="open子块Detail(item.chunkId)">
+                <div class="flex items-center justify-between gap-2"><strong class="text-compact text-foreground">子块 C#{{ item.chunkNo || '-' }}</strong><span class="text-xs text-muted-foreground">{{ build子块RelationText(item) }}</span></div>
+                <p class="text-xs text-muted-foreground">{{ item.sectionPath || '未识别章节' }}</p>
+                <span class="line-clamp-2 text-xs text-foreground">{{ item.chunkText }}</span>
+              </Button>
             </div>
-          </section>
-        </template>
-      </aside>
-    </transition>
-
-    <div class="page-top">
-      <div class="page-top-main">
-        <div class="page-top-breadcrumb">
-          <button class="ghost-button page-top-back" type="button" @click="goBack">
-            <ArrowLeftIcon class="back-icon" />
-            返回文档列表
-          </button>
-          <span>文档接入</span>
-          <span>/</span>
-          <strong>文档工作台</strong>
+          </div>
         </div>
-        <p class="page-top-caption">围绕单个文档完成策略确认、索引构建、验证 Chunk 结果与任务追踪。</p>
+    </ChildPageDialog>
+
+    <div class="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
+      <div class="min-w-0">
+        <div class="mb-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <Button variant="outline" size="sm" class="gap-1.5" type="button" @click="goBack"><ArrowLeftIcon class="h-4 w-4" />返回文档列表</Button>
+          <span>文档接入</span><span>/</span><strong class="text-foreground">文档工作台</strong>
+        </div>
       </div>
-      <div class="page-top-actions">
-        <button class="ghost-button" type="button" :disabled="loading" @click="loadAll">
-          {{ loading ? '刷新中...' : '刷新详情' }}
-        </button>
-      </div>
+      <Button variant="outline" class="rounded-md" size="lg" type="button" :disabled="loading" @click="loadAll">{{ loading ? '刷新中...' : '刷新详情' }}</Button>
     </div>
 
-    <div v-if="pageNotice.message" class="page-notice" :class="`page-notice-${pageNotice.type}`">
-      {{ pageNotice.message }}
-    </div>
+    <div v-if="pageNotice.message" class="rounded-md px-4 py-3 text-sm font-medium" :class="noticeClass(pageNotice.type)">{{ pageNotice.message }}</div>
 
-    <article v-if="documentDetail" class="panel-card detail-card">
-      <div class="detail-content">
-        <nav class="workbench-nav" aria-label="文档工作台章节导航">
-          <button
-            v-for="item in workbenchSections"
-            :key="`workbench-nav-${item.key}`"
-            class="workbench-nav-item"
-            :class="[{ active: activeWorkbenchSection === item.key }, `workbench-nav-item-${item.key}`]"
-            type="button"
-            @click="scrollToWorkbenchSection(item.key)"
-          >
-            <span class="workbench-nav-step">{{ item.step }}</span>
-            <span class="workbench-nav-copy">
-              <strong>{{ item.label }}</strong>
-              <span>{{ item.caption }}</span>
-            </span>
-            <em>{{ item.status }}</em>
-          </button>
-        </nav>
+    <article v-if="documentDetail" class="glass-card glass-edge rounded-glass border">
+      <nav class="flex overflow-x-auto rounded-tl-lg rounded-tr-lg bg-secondary" aria-label="文档工作台章节导航">
+        <Button v-for="item in workbenchSections" :key="`workbench-nav-${item.key}`"
+          variant="ghost" size="sm"
+          class="flex shrink-0 items-center gap-3 border-b-2 border-transparent px-5 py-4 !h-auto first:rounded-tl-lg last:rounded-tr-lg"
+          :class="activeWorkbenchSection === item.key ? '!border-b-primary bg-card text-primary' : 'text-foreground hover:bg-secondary/80'"
+          type="button" @click="scrollToWorkbenchSection(item.key)">
+          <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold"
+            :class="activeWorkbenchSection === item.key ? 'bg-primary text-white' : 'bg-foreground/[0.08] text-muted-foreground'">{{ item.step }}</span>
+          <span class="flex flex-col items-start">
+            <strong class="text-compact font-semibold">{{ item.label }}</strong>
+            <span class="text-xs text-muted-foreground">{{ item.caption }}</span>
+          </span>
+          <em class="hidden whitespace-nowrap text-micro not-italic text-muted-foreground md:block">{{ item.status }}</em>
+        </Button>
+      </nav>
 
-        <section v-show="activeWorkbenchSection === 'overview'" ref="overviewSectionRef" class="detail-section workbench-section" data-workbench-section="overview">
-          <div class="workbench-section-head">
-            <div class="workbench-section-heading">
-              <span class="workbench-section-step-badge">Overview</span>
-              <h2>文档概览</h2>
-              <p>先确认文档状态、关键指标和当前工作焦点，再进入下方流程。</p>
+      <div class="p-5">
+        <section v-show="activeWorkbenchSection === 'overview'" ref="overviewSectionRef" data-workbench-section="overview">
+          <!-- 文档标识 + 三状态徽章 -->
+          <div class="mb-5 flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
+            <div class="w-full min-w-0 max-w-full">
+              <h2 class="max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">{{ documentDetail.documentName }}</h2>
+              <p v-if="showOriginalFileName" class="mt-0.5 block w-full max-w-full truncate text-xs text-muted-foreground" :title="documentDetail.originalFileName">{{ documentDetail.originalFileName }}</p>
             </div>
-            <span class="workbench-section-pill">{{ workflowCurrentPhase.shortLabel }}</span>
+            <div class="flex shrink-0 flex-wrap gap-1.5">
+              <AdminStatusBadge :label="documentDetail.parseStatusName" :code="documentDetail.parseStatus" type="parse" />
+              <AdminStatusBadge :label="documentDetail.strategyStatusName" :code="documentDetail.strategyStatus" type="strategy" />
+              <AdminStatusBadge :label="documentDetail.indexStatusName" :code="documentDetail.indexStatus" type="index" />
+            </div>
           </div>
 
-          <div class="overview-document-card">
-            <div class="overview-document-main">
-              <p class="overview-document-kicker">Current Document</p>
-              <h3>{{ documentDetail.documentName }}</h3>
-              <p v-if="showOriginalFileName" class="overview-document-subtitle">{{ documentDetail.originalFileName }}</p>
-            </div>
-            <div class="overview-document-side">
-              <div class="detail-statuses">
-                <AdminStatusBadge :label="documentDetail.parseStatusName" :code="documentDetail.parseStatus" type="parse" />
-                <AdminStatusBadge :label="documentDetail.strategyStatusName" :code="documentDetail.strategyStatus" type="strategy" />
-                <AdminStatusBadge :label="documentDetail.indexStatusName" :code="documentDetail.indexStatus" type="index" />
+          <!-- 关键指标带：真实字段大数字磁贴 -->
+          <div class="mb-5 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3 lg:grid-cols-5">
+            <div v-for="metric in documentMetrics" :key="`metric-${metric.key}`" class="bg-card px-4 py-3">
+              <div class="flex items-baseline gap-1.5">
+                <span class="tabular-nums text-title font-semibold leading-none text-foreground">{{ metric.value }}</span>
+                <span v-if="metric.tone === 'success'" class="h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full bg-[var(--status-success-fg)]" aria-hidden="true"></span>
               </div>
-              <span class="overview-document-phase">{{ workflowCurrentPhase.title }}</span>
+              <p class="mt-1.5 text-caption font-medium text-foreground">{{ metric.label }}</p>
+              <p class="text-micro text-muted-foreground">{{ metric.hint }}</p>
             </div>
           </div>
 
-          <div class="workspace-guidance-grid overview-guidance-grid">
-            <article class="workspace-guidance-card" :class="`workspace-guidance-card-${workflowCurrentPhase.tone}`">
-              <span class="workspace-guidance-kicker">当前阶段</span>
-              <strong>{{ workflowCurrentPhase.title }}</strong>
-              <p>{{ workflowCurrentPhase.description }}</p>
-            </article>
-            <article class="workspace-guidance-card workspace-guidance-card-next">
-              <span class="workspace-guidance-kicker">下一步建议</span>
-              <strong>{{ workflowNextAction.title }}</strong>
-              <p>{{ workflowNextAction.description }}</p>
-            </article>
-          </div>
-
-          <article class="workspace-subsection workspace-subsection-compact overview-routes-card">
-            <div class="workspace-subsection-header">
-              <div>
-                <p class="workspace-subsection-kicker">Quick Routes</p>
-                <h3>常用入口</h3>
+          <!-- 处理状态轨道：完成=空心绿勾 / 当前=实心焦点 / 待办=中性，颜色非唯一信号 -->
+          <div class="mb-5 flex items-start">
+            <template v-for="(step, i) in workflowSteps" :key="step.key">
+              <div class="flex flex-col items-center gap-1.5">
+                <span class="grid h-8 w-8 place-items-center rounded-full text-caption font-bold transition-colors" :class="trackNodeVisual(step.state, step.key === 'build' && hasBuildInFlightStatus).node">
+                  <CheckCircleIcon v-if="step.state === 'done' || (step.key === 'done' && step.state === 'current')" class="h-4 w-4" />
+                  <ExclamationCircleIcon v-else-if="step.state === 'failed'" class="h-4 w-4" />
+                  <span v-else>{{ i + 1 }}</span>
+                </span>
+                <span class="whitespace-nowrap text-micro" :class="trackNodeVisual(step.state, false).label">{{ step.label }}</span>
               </div>
+              <span v-if="i < workflowSteps.length - 1" class="mx-1.5 mt-4 h-0.5 flex-1 rounded-full" :class="trackNodeVisual(step.state, false).line"></span>
+            </template>
+          </div>
+
+          <!-- 当前状态 + 下一步 + 唯一主操作：中性单行动作带，状态用小圆点信号 -->
+          <div class="rounded-lg border border-border p-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="flex min-w-0 flex-1 items-start gap-2.5">
+                <span class="mt-1 h-2 w-2 shrink-0 rounded-full" :class="guidanceDotClass(workflowCurrentPhase.tone)" aria-hidden="true"></span>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <strong class="text-sm text-foreground">{{ workflowCurrentPhase.title }}</strong>
+                    <span class="inline-flex rounded-full bg-secondary px-2 py-0.5 text-micro font-semibold text-muted-foreground">{{ workflowCurrentPhase.shortLabel }}</span>
+                  </div>
+                  <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground"><span class="font-semibold text-foreground">下一步：</span>{{ workflowNextAction.title }} — {{ workflowNextAction.description }}</p>
+                </div>
+              </div>
+              <Button size="lg" class="shrink-0 gap-1.5 rounded-md" type="button" @click="runOverviewPrimaryAction">
+                <span>{{ overviewPrimaryAction.label }}</span>
+                <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+              </Button>
             </div>
-            <div class="overview-action-row">
-              <button class="ghost-button" type="button" @click="scrollToWorkbenchSection('strategy')">
-                查看策略配置
-              </button>
-              <button class="ghost-button" type="button" @click="scrollToWorkbenchSection('execution')">
-                前往确认与构建
-              </button>
-              <button class="ghost-button" type="button" @click="scrollToWorkbenchSection('chunk')">
-                检查 Chunk 结果
-              </button>
-            </div>
-          </article>
+          </div>
         </section>
 
-        <section v-show="activeWorkbenchSection === 'strategy'" ref="strategySectionRef" class="detail-section workbench-section" data-workbench-section="strategy">
-          <div class="workbench-section-head">
-            <div class="workbench-section-heading">
-              <span class="workbench-section-step-badge">Step 1</span>
-              <h2>配置策略</h2>
-              <p>先阅读系统推荐，再分别调整父块和子块流水线，形成最终执行方案。</p>
-            </div>
-            <span class="workbench-section-pill">{{ strategySectionStatusText }}</span>
-          </div>
+        <section v-show="activeWorkbenchSection === 'strategy'" ref="strategySectionRef" class="mt-5" data-workbench-section="strategy">
 
-          <div v-if="documentDetail.parseErrorMsg" class="inline-notice inline-notice-danger">
-            {{ documentDetail.parseErrorMsg }}
-          </div>
+          <div v-if="documentDetail.parseErrorMsg" class="mt-4 rounded-md border border-destructive/10 bg-destructive/[0.06] px-3 py-2.5 text-sm text-destructive">{{ documentDetail.parseErrorMsg }}</div>
 
-          <div class="strategy-status-bar" v-if="strategySystemStages.length">
-            <article
-              v-for="item in strategySystemStages"
-              :key="`strategy-stage-${item.code}`"
-              class="strategy-status-step"
-              :class="`strategy-status-step-${item.status}`"
-            >
-              <div class="strategy-status-index">{{ item.order }}</div>
-              <div class="strategy-status-copy">
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.description }}</span>
+          <div v-if="strategySystemStages.length" class="mb-5 flex items-center">
+            <template v-for="(item, i) in strategySystemStages" :key="`strategy-stage-${item.code}`">
+              <div class="flex items-center gap-2">
+                <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-micro font-bold"
+                  :class="trackNodeVisual(strategyStageState(item.status, i === strategySystemStages.length - 1), false).node">
+                  <CheckCircleIcon v-if="item.status === 'completed'" class="h-3.5 w-3.5" />
+                  <ExclamationCircleIcon v-else-if="item.status === 'failed'" class="h-3.5 w-3.5" />
+                  <span v-else>{{ item.order }}</span>
+                </span>
+                <span class="whitespace-nowrap text-xs" :class="trackNodeVisual(strategyStageState(item.status, i === strategySystemStages.length - 1), false).label">{{ item.label }}</span>
               </div>
-            </article>
+              <span v-if="i < strategySystemStages.length - 1" class="mx-2 h-0.5 flex-1 rounded-full" :class="trackNodeVisual(strategyStageState(item.status, false), false).line"></span>
+            </template>
           </div>
 
-          <div v-if="planLoading" class="empty-block compact-empty">正在读取策略详情...</div>
-          <div v-else-if="!strategyPlan?.planReady" class="empty-block compact-empty">
-            当前文档尚未生成策略方案，解析完成后可点击刷新查看。
-          </div>
+          <div v-if="planLoading" class="mt-6 py-6 text-center text-sm text-muted-foreground">正在读取策略详情...</div>
+          <div v-else-if="!strategyPlan?.planReady" class="mt-6 rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">当前文档尚未生成策略方案，解析完成后可点击刷新查看。</div>
+
           <template v-else>
-            <div class="strategy-section-shell">
-              <div class="strategy-intro">
-                <p class="strategy-intro-kicker">Recommendation Summary</p>
-                <p class="strategy-intro-copy">
-                  {{ strategyPlan.plan?.recommendReason || '系统已生成推荐策略，可以根据业务需要再做补充。' }}
-                </p>
-              </div>
+            <div class="mb-3">
+              <h3 class="text-sm font-semibold text-foreground">双流水线</h3>
+              <p class="mt-0.5 text-micro text-muted-foreground">系统推荐已内联到每条流水线，可增删策略、用 ↑↓ 调整顺序，或一键恢复推荐。</p>
+            </div>
 
-              <div class="strategy-flow-stack">
-                <section
-                  v-for="pipeline in strategyPipelineLibrary"
-                  :key="`recommended-${pipeline.key}`"
-                  class="strategy-lane strategy-lane-recommended"
-                  :class="`strategy-lane-${pipeline.key}`"
-                >
-                  <div class="strategy-lane-header">
-                    <div class="strategy-lane-titlebox">
-                      <p class="strategy-lane-kicker">{{ pipeline.key === 'parent' ? 'Answer Context Pipeline' : 'Retrieval Recall Pipeline' }}</p>
-                      <h5>{{ pipeline.label }}</h5>
+            <div class="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+              <div v-for="pipeline in strategyPipelineLibrary" :key="`lane-${pipeline.key}`"
+                class="overflow-hidden rounded-lg border border-border"
+                :class="pipeline.key === 'parent' ? 'pipeline-tone-parent' : 'pipeline-tone-child'">
+                <!-- 分类身份：靠标签片 + 编号实心色承载，不用顶部粗色带 -->
+                <div class="flex items-start justify-between gap-2 border-b border-border px-4 pb-3 pt-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="rounded px-1.5 py-0.5 text-technical font-bold uppercase" style="background: var(--pl-bg); color: var(--pl-fg)">
+                        {{ pipeline.key === 'parent' ? '父块' : '子块' }}
+                      </span>
+                      <span class="text-compact font-semibold text-foreground">{{ pipeline.label }}</span>
                     </div>
-                    <p class="strategy-lane-description">{{ pipeline.description }}</p>
+                    <p class="mt-0.5 text-micro text-muted-foreground">{{ pipeline.description }}</p>
                   </div>
-
-                  <div
-                    v-if="resolvePlanPipeline(strategyPlan.plan, pipeline.key)?.steps?.length"
-                    class="timeline-list"
-                    :class="`timeline-list-${pipeline.key}`"
-                  >
-                    <template
-                      v-for="(step, index) in resolvePlanPipeline(strategyPlan.plan, pipeline.key).steps"
-                      :key="`${strategyPlan.plan.planId}-${pipeline.key}-${step.stepNo}`"
-                    >
-                      <article class="timeline-item">
-                        <div class="timeline-index">{{ String(step.stepNo).padStart(2, '0') }}</div>
-                        <div class="timeline-main">
-                          <strong>{{ step.strategyName }}</strong>
-                          <p>{{ step.recommendReason || step.strategyRoleName }}</p>
-                        </div>
-                      </article>
-                      <div
-                        v-if="index < resolvePlanPipeline(strategyPlan.plan, pipeline.key).steps.length - 1"
-                        :key="`${strategyPlan.plan.planId}-${pipeline.key}-${step.stepNo}-arrow`"
-                        class="flow-arrow"
-                      >
-                        <span class="flow-arrow-icon" aria-hidden="true">↓</span>
-                      </div>
-                    </template>
-                  </div>
-                  <div v-else class="empty-block compact-empty">
-                    当前方案还没有 {{ pipeline.label }} 配置。
-                  </div>
-                </section>
-              </div>
-
-              <div class="strategy-adjust-shell">
-                <div class="strategy-adjust-header">
-                  <div class="strategy-adjust-titlebox">
-                    <p class="strategy-adjust-kicker">Adjustment Workspace</p>
-                    <h5>双流水线调整</h5>
-                  </div>
-                  <p class="strategy-adjust-description">分别配置父块回答流水线和子块召回流水线，并通过上移 / 下移调整顺序。</p>
+                  <Button v-if="!pipelineMatchesRecommendation(pipeline.key)" variant="ghost" size="sm" class="shrink-0 gap-1 rounded-md text-muted-foreground hover:text-foreground" type="button" :disabled="hasBuildInFlightStatus" @click="restoreRecommendedPipeline(pipeline.key)">
+                    <ArrowPathIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                    <span class="text-micro">恢复推荐</span>
+                  </Button>
                 </div>
 
-                <div class="strategy-flow-stack strategy-flow-stack-edit">
-                  <section
-                    v-for="pipeline in strategyPipelineLibrary"
-                    :key="`editor-${pipeline.key}`"
-                    class="strategy-lane strategy-lane-edit"
-                    :class="`strategy-lane-${pipeline.key}`"
-                  >
-                    <div class="strategy-lane-header">
-                      <div class="strategy-lane-titlebox">
-                        <p class="strategy-lane-kicker">{{ pipeline.key === 'parent' ? 'Answer Context Pipeline' : 'Retrieval Recall Pipeline' }}</p>
-                        <h5>{{ pipeline.label }}</h5>
-                      </div>
-                      <p class="strategy-lane-description">{{ pipeline.description }}</p>
-                    </div>
-
-                    <div class="selected-flow-board" :class="`selected-flow-board-${pipeline.key}`">
-                      <span class="selected-flow-label" :class="`selected-flow-label-${pipeline.key}`">当前配置</span>
-
-                      <div v-if="getSelectedStrategyPreview(pipeline.key).length" class="sequence-board selected-flow-sequence">
-                        <template v-for="(row, rowIndex) in getSelectedStrategyRows(pipeline.key)" :key="`strategy-row-${pipeline.key}-${rowIndex}`">
-                          <div class="sequence-row">
-                            <article v-if="row.leftItem" class="selected-flow-card sequence-card">
-                              <div class="selected-flow-order">{{ row.leftItem.order }}</div>
-                              <div class="selected-flow-content">
-                                <strong>{{ row.leftItem.label }}</strong>
-                                <span>{{ row.leftItem.description }}</span>
-                              </div>
-                              <div class="selected-flow-actions">
-                                <button class="flow-action-button" type="button" :disabled="row.leftItem.index === 0" @click="moveStrategy(row.leftItem.type, -1, pipeline.key)">
-                                  上移
-                                </button>
-                                <button class="flow-action-button" type="button" :disabled="row.leftItem.index === getSelectedStrategyPreview(pipeline.key).length - 1" @click="moveStrategy(row.leftItem.type, 1, pipeline.key)">
-                                  下移
-                                </button>
-                              </div>
-                            </article>
-                            <div v-else class="sequence-card-placeholder"></div>
-
-                            <div v-if="row.leftItem && row.rightItem" class="sequence-inline-arrow">{{ row.direction === 'rtl' ? '←' : '→' }}</div>
-                            <div v-else class="sequence-inline-arrow sequence-inline-arrow-empty"></div>
-
-                            <article v-if="row.rightItem" class="selected-flow-card sequence-card">
-                              <div class="selected-flow-order">{{ row.rightItem.order }}</div>
-                              <div class="selected-flow-content">
-                                <strong>{{ row.rightItem.label }}</strong>
-                                <span>{{ row.rightItem.description }}</span>
-                              </div>
-                              <div class="selected-flow-actions">
-                                <button class="flow-action-button" type="button" :disabled="row.rightItem.index === 0" @click="moveStrategy(row.rightItem.type, -1, pipeline.key)">
-                                  上移
-                                </button>
-                                <button class="flow-action-button" type="button" :disabled="row.rightItem.index === getSelectedStrategyPreview(pipeline.key).length - 1" @click="moveStrategy(row.rightItem.type, 1, pipeline.key)">
-                                  下移
-                                </button>
-                              </div>
-                            </article>
-                            <div v-else class="sequence-card-placeholder"></div>
+                <!-- 连线步骤链 -->
+                <div class="px-4 pb-4 pt-4">
+                  <ol v-if="getPipelineStepRows(pipeline.key).length" class="flex flex-col">
+                    <li v-for="(step, index) in getPipelineStepRows(pipeline.key)" :key="`step-${pipeline.key}-${step.type}`" class="relative">
+                      <div class="flex items-start gap-2.5 rounded-md border p-2.5 pipeline-lane-surface" style="border-color: var(--pl-border)">
+                        <span class="grid h-5 w-5 shrink-0 place-items-center rounded-full text-technical font-bold text-white" style="background: var(--pl-solid)">{{ step.order }}</span>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-compact font-medium text-foreground">{{ step.label }}</span>
+                            <span v-if="step.recommended" class="rounded-full border px-1.5 text-technical font-medium" style="border-color: var(--pl-border); color: var(--pl-fg)">推荐</span>
                           </div>
-
-                          <div v-if="rowIndex < getSelectedStrategyRows(pipeline.key).length - 1" class="sequence-down-row" :class="`sequence-down-row-${row.downColumn}`">
-                            <span class="sequence-down-arrow">↓</span>
-                          </div>
-                        </template>
-                      </div>
-
-                      <div v-else class="selected-flow-empty">
-                        {{ pipeline.label }}至少选择一个拆分策略，已选策略会在这里形成清晰的箭头处理链路。
-                      </div>
-                    </div>
-
-                    <div class="strategy-picker" :class="`strategy-picker-${pipeline.key}`">
-                      <button
-                        v-for="item in strategyLibrary"
-                        :key="`${pipeline.key}-${item.type}`"
-                        class="strategy-chip"
-                        :class="{ active: getSelectedStrategyTypes(pipeline.key).includes(item.type) }"
-                        type="button"
-                        @click="toggleStrategy(item.type, pipeline.key)"
-                      >
-                        <div class="strategy-chip-top">
-                          <span class="strategy-chip-state">{{ getSelectedStrategyTypes(pipeline.key).includes(item.type) ? '已选中' : '点击添加' }}</span>
-                          <CheckCircleIcon v-if="getSelectedStrategyTypes(pipeline.key).includes(item.type)" class="strategy-chip-check" />
+                          <p class="mt-0.5 text-micro text-muted-foreground">{{ step.recommendReason || step.description }}</p>
                         </div>
-                        <strong>{{ item.label }}</strong>
-                        <span>{{ item.description }}</span>
-                      </button>
-                    </div>
-
-                    <div class="preview-box" :class="`preview-box-${pipeline.key}`">
-                      <span class="preview-box-title" :class="`preview-box-title-${pipeline.key}`">{{ pipeline.label }}最终提交顺序</span>
-                      <div v-if="getSelectedStrategyPreview(pipeline.key).length" class="preview-flow">
-                        <template v-for="(item, index) in getSelectedStrategyPreview(pipeline.key)" :key="`preview-${pipeline.key}-${item.type}`">
-                          <span class="preview-tag">{{ item.label }}</span>
-                          <ArrowRightIcon v-if="index < getSelectedStrategyPreview(pipeline.key).length - 1" class="preview-arrow" />
-                        </template>
+                        <div class="flex shrink-0 items-center gap-0.5">
+                          <Button variant="ghost" size="icon-sm" class="h-6 w-6 rounded" type="button" :disabled="index === 0 || hasBuildInFlightStatus" aria-label="上移" @click="moveStrategy(step.type, -1, pipeline.key)">
+                            <ChevronUpIcon class="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" class="h-6 w-6 rounded" type="button" :disabled="index === getPipelineStepRows(pipeline.key).length - 1 || hasBuildInFlightStatus" aria-label="下移" @click="moveStrategy(step.type, 1, pipeline.key)">
+                            <ChevronDownIcon class="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" class="h-6 w-6 rounded text-muted-foreground hover:text-destructive" type="button" :disabled="hasBuildInFlightStatus" aria-label="移除" @click="toggleStrategy(step.type, pipeline.key)">
+                            <XMarkIcon class="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
-                      <p v-else class="preview-empty">还没有选中策略，无法生成当前流水线的最终提交顺序。</p>
+                      <div v-if="index < getPipelineStepRows(pipeline.key).length - 1" class="ml-[19px] flex h-3 items-center">
+                        <span class="h-3 w-px pipeline-step-line"></span>
+                        <ArrowDownIcon class="h-3 w-3 -ml-1.5 text-muted-foreground" aria-hidden="true" />
+                      </div>
+                    </li>
+                  </ol>
+                  <p v-else class="rounded-md border border-dashed border-border py-4 text-center text-xs text-muted-foreground">还未选择策略，从下方添加</p>
+
+                  <!-- 调色板：只列未加入的策略 -->
+                  <div v-if="getPaletteStrategies(pipeline.key).length" class="mt-3 border-t border-border pt-3">
+                    <span class="mb-2 block text-micro font-semibold text-muted-foreground">添加策略</span>
+                    <div class="flex flex-wrap gap-1.5">
+                      <Button v-for="item in getPaletteStrategies(pipeline.key)" :key="`add-${pipeline.key}-${item.type}`"
+                        variant="outline" size="sm"
+                        class="!h-auto items-start gap-1.5 rounded-md border-dashed px-2.5 py-1.5 text-left"
+                        type="button" :disabled="hasBuildInFlightStatus" @click="toggleStrategy(item.type, pipeline.key)">
+                        <PlusIcon class="mt-0.5 h-3.5 w-3.5 shrink-0" style="color: var(--pl-fg)" aria-hidden="true" />
+                        <span class="flex flex-col">
+                          <span class="text-caption font-medium text-foreground">{{ item.label }}</span>
+                          <span class="text-micro font-normal text-muted-foreground">{{ item.description }}</span>
+                        </span>
+                      </Button>
                     </div>
-                  </section>
+                  </div>
                 </div>
               </div>
             </div>
-
           </template>
         </section>
 
-        <section v-show="activeWorkbenchSection === 'execution'" ref="executionSectionRef" class="detail-section workbench-section" data-workbench-section="execution">
-          <div class="workbench-section-head">
-            <div class="workbench-section-heading">
-              <span class="workbench-section-step-badge">Step 2</span>
-              <h2>确认并构建</h2>
-              <p>先确认策略方案，再执行构建索引，并在同一处查看执行轨迹。</p>
-            </div>
-            <span class="workbench-section-pill">{{ executionSectionStatusText }}</span>
-          </div>
-
-          <div class="execution-summary-grid">
-            <article class="execution-summary-card">
-              <span>策略确认</span>
-              <strong>{{ confirmStepBadge }}</strong>
-              <p>{{ hasConfirmedStrategy ? '当前方案已进入确认流程。' : '还未完成最终确认。' }}</p>
-            </article>
-            <article class="execution-summary-card">
-              <span>构建执行</span>
-              <strong>{{ buildStepBadge }}</strong>
-              <p>{{ hasBuildInFlightStatus ? '系统正在执行构建，请留意下方轨迹。' : '确认完成后即可发起构建。' }}</p>
-            </article>
-            <article class="execution-summary-card">
-              <span>当前任务</span>
-              <strong>{{ activeBuildTaskId || documentDetail.latestTaskId || '-' }}</strong>
-              <p>{{ activeBuildStageLabel || '当前还没有正在执行的构建任务。' }}</p>
-            </article>
-          </div>
-
-          <div class="confirm-actions">
-            <input v-model="adjustNote" class="adjust-input" type="text" placeholder="补充说明，例如：增加大模型智能切块用于复杂段落" />
-            <div class="strategy-submit-actions">
-              <article class="action-stage-card" :class="`action-stage-${confirmStepState}`">
-                <div class="action-stage-head">
-                  <span class="action-stage-index">01</span>
-                  <span class="action-stage-badge">{{ confirmStepBadge }}</span>
-                </div>
-                <strong>先确认策略方案</strong>
-                <p>{{ confirmStepDescription }}</p>
-                <button
-                  class="action-button action-button-confirm"
-                  type="button"
-                  :disabled="!canConfirmStrategyAction"
-                  @click="submitConfirmStrategy"
-                >
-                  <span>{{ confirmButtonLabel }}</span>
-                  <CheckCircleIcon class="action-button-icon" aria-hidden="true" />
-                </button>
-              </article>
-
-              <article class="action-stage-card" :class="`action-stage-${buildStepState}`">
-                <div class="action-stage-head">
-                  <span class="action-stage-index">02</span>
-                  <span class="action-stage-badge">{{ buildStepBadge }}</span>
-                </div>
-                <strong>再执行构建索引</strong>
-                <p>{{ buildStepDescription }}</p>
-                <button
-                  class="action-button action-button-build"
-                  type="button"
-                  :disabled="!canBuildIndexAction"
-                  @click="submitBuildIndex"
-                >
-                  <span>{{ buildButtonLabel }}</span>
-                  <ArrowRightIcon class="action-button-icon" aria-hidden="true" />
-                </button>
-              </article>
-            </div>
-          </div>
-
-          <div v-if="showBuildTracker" ref="buildTrackerRef" class="build-progress-card build-progress-card-inline">
-            <div class="build-progress-header">
-              <div>
-                <strong>{{ buildTrackerTitle }}</strong>
-                <p class="build-progress-text">{{ buildTrackerDescription }}</p>
+        <section v-show="activeWorkbenchSection === 'execution'" ref="executionSectionRef" class="mt-5" data-workbench-section="execution">
+          <div class="flex items-center gap-2 max-sm:flex-col">
+            <article class="flex-1 rounded-xl border p-3" :class="confirmStepVisual.stepCard">
+              <div class="flex items-center gap-2 mb-2">
+                <!-- 终态用图标替掉序号，和上方阶段轨道、下方构建轨迹同一套写法：颜色之外再给一个信号 -->
+                <span class="inline-flex items-center justify-center rounded px-2 py-0.5 font-mono text-xs font-bold"
+                  :class="confirmStepVisual.marker">
+                  <CheckCircleIcon v-if="confirmStepTone === 'success'" class="h-3.5 w-3.5" aria-hidden="true" />
+                  <ExclamationCircleIcon v-else-if="confirmStepTone === 'danger'" class="h-3.5 w-3.5" aria-hidden="true" />
+                  <template v-else>01</template>
+                </span>
+                <span class="text-xs font-semibold text-muted-foreground">{{ confirmStepBadge }}</span>
               </div>
-              <span class="build-pulse" :class="{ 'build-pulse-static': !isBuildPolling }">
-                {{ isBuildPolling ? '实时轮询中' : '轨迹已保留' }}
-              </span>
+              <strong class="block text-sm text-foreground mb-1">先确认策略方案</strong>
+              <p class="text-xs text-muted-foreground mb-2">{{ confirmStepDescription }}</p>
+              <Button variant="outline" class="w-full gap-2 rounded-md" :class="confirmStepVisual.button" size="sm" type="button" :disabled="!canConfirmStrategyAction" @click="submitConfirmStrategy"><span>{{ confirmButtonLabel }}</span><CheckCircleIcon class="h-4 w-4" /></Button>
+            </article>
+            <div class="flex items-center justify-center px-1 max-sm:rotate-90">
+              <ArrowRightIcon class="size-5" :class="confirmStepVisual.connector" aria-hidden="true" />
             </div>
-
-            <div class="sequence-board build-stage-board">
-              <template v-for="(row, rowIndex) in buildStageRows" :key="`build-row-${rowIndex}`">
-                <div class="sequence-row">
-                  <article v-if="row.leftItem" class="stage-card sequence-card" :class="`stage-${row.leftItem.status}`">
-                    <div class="stage-order">
-                      <span v-if="row.leftItem.status === 'current'" class="stage-spinner" aria-hidden="true"></span>
-                      <span v-else>{{ row.leftItem.order }}</span>
-                    </div>
-                    <div class="stage-body">
-                      <strong>{{ row.leftItem.label }}</strong>
-                      <span>{{ row.leftItem.description }}</span>
-                      <em>{{ row.leftItem.statusLabel }}</em>
-                    </div>
+            <article class="flex-1 rounded-xl border p-3" :class="buildStepVisual.stepCard">
+              <div class="flex items-center gap-2 mb-2">
+                <!-- 真正在跑时给转圈，动效比大色块更抓眼且不占静态视觉预算；ready 只是"可执行"，不给转圈 -->
+                <span class="inline-flex items-center justify-center rounded px-2 py-0.5 font-mono text-xs font-bold"
+                  :class="buildStepVisual.marker">
+                  <span v-if="buildStepState === 'current'" class="stage-spinner" aria-hidden="true"></span>
+                  <CheckCircleIcon v-else-if="buildStepTone === 'success'" class="h-3.5 w-3.5" aria-hidden="true" />
+                  <ExclamationCircleIcon v-else-if="buildStepTone === 'danger'" class="h-3.5 w-3.5" aria-hidden="true" />
+                  <template v-else>02</template>
+                </span>
+                <span class="text-xs font-semibold text-muted-foreground">{{ buildStepBadge }}</span>
+              </div>
+              <strong class="block text-sm text-foreground mb-1">再执行构建索引</strong>
+              <p class="text-xs text-muted-foreground mb-2">{{ buildStepDescription }}</p>
+              <Button variant="outline" class="w-full gap-2 rounded-md" :class="buildStepVisual.button" size="sm" type="button" :disabled="!canBuildIndexAction" @click="submitBuildIndex"><span>{{ buildButtonLabel }}</span><ArrowRightIcon class="h-4 w-4" /></Button>
+            </article>
+          </div>
+          <div v-if="showBuildTracker" ref="buildTrackerRef" class="mt-4 rounded-xl border border-border bg-secondary p-4">
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <div><strong class="block text-sm text-foreground">{{ buildTrackerTitle }}</strong><p class="mt-0.5 text-compact text-[var(--muted-foreground)]">{{ buildTrackerDescription }}</p></div>
+              <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold" :class="isBuildPolling?'bg-running/10 text-running':'bg-foreground/[0.06] text-muted-foreground'">{{ isBuildPolling?'实时轮询中':'轨迹已保留' }}</span>
+            </div>
+            <div class="flex flex-col gap-2">
+              <template v-for="(row,rowIndex) in buildStageRows" :key="`build-row-${rowIndex}`">
+                <div class="flex items-stretch gap-2">
+                  <article v-if="row.leftItem" class="flex flex-1 items-center gap-3 rounded-lg border p-3" :class="buildProgressVisual(row.leftItem.status).card">
+                    <div class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold" :class="buildProgressVisual(row.leftItem.status).marker"><span v-if="row.leftItem.status==='current'" class="stage-spinner" aria-hidden="true"></span><CheckCircleIcon v-else-if="['done','completed'].includes(row.leftItem.status)" class="h-4 w-4" /><span v-else>{{ row.leftItem.order }}</span></div>
+                    <div><span class="mb-1 inline-flex items-center rounded-md border border-border bg-secondary px-1.5 py-0.5 text-micro font-medium text-muted-foreground">步骤 {{ Number(row.leftItem.order) }}</span><strong class="block text-compact text-foreground">{{ row.leftItem.label }}</strong><em class="mt-0.5 block text-xs not-italic text-muted-foreground">{{ row.leftItem.statusLabel }}</em></div>
                   </article>
-                  <div v-else class="sequence-card-placeholder"></div>
-
-                  <div v-if="row.leftItem && row.rightItem" class="sequence-inline-arrow">{{ row.direction === 'rtl' ? '←' : '→' }}</div>
-                  <div v-else class="sequence-inline-arrow sequence-inline-arrow-empty"></div>
-
-                  <article v-if="row.rightItem" class="stage-card sequence-card" :class="`stage-${row.rightItem.status}`">
-                    <div class="stage-order">
-                      <span v-if="row.rightItem.status === 'current'" class="stage-spinner" aria-hidden="true"></span>
-                      <span v-else>{{ row.rightItem.order }}</span>
-                    </div>
-                    <div class="stage-body">
-                      <strong>{{ row.rightItem.label }}</strong>
-                      <span>{{ row.rightItem.description }}</span>
-                      <em>{{ row.rightItem.statusLabel }}</em>
-                    </div>
+                  <div v-else class="flex-1"></div>
+                  <div class="flex w-6 items-center justify-center text-xs text-muted-foreground">{{ row.leftItem && row.rightItem ? (row.direction==='rtl'?'←':'→') : '' }}</div>
+                  <article v-if="row.rightItem" class="flex flex-1 items-center gap-3 rounded-lg border p-3" :class="buildProgressVisual(row.rightItem.status).card">
+                    <div class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold" :class="buildProgressVisual(row.rightItem.status).marker"><span v-if="row.rightItem.status==='current'" class="stage-spinner" aria-hidden="true"></span><CheckCircleIcon v-else-if="['done','completed'].includes(row.rightItem.status)" class="h-4 w-4" /><span v-else>{{ row.rightItem.order }}</span></div>
+                    <div><span class="mb-1 inline-flex items-center rounded-md border border-border bg-secondary px-1.5 py-0.5 text-micro font-medium text-muted-foreground">步骤 {{ Number(row.rightItem.order) }}</span><strong class="block text-compact text-foreground">{{ row.rightItem.label }}</strong><em class="mt-0.5 block text-xs not-italic text-muted-foreground">{{ row.rightItem.statusLabel }}</em></div>
                   </article>
-                  <div v-else class="sequence-card-placeholder"></div>
+                  <div v-else class="flex-1"></div>
                 </div>
-
-                <div v-if="rowIndex < buildStageRows.length - 1" class="sequence-down-row" :class="`sequence-down-row-${row.downColumn}`">
-                  <span class="sequence-down-arrow">↓</span>
-                </div>
+                <div v-if="rowIndex < buildStageRows.length-1" class="flex" :class="row.downColumn==='right'?'justify-end pr-8':row.downColumn==='left'?'justify-start pl-8':'justify-center'"><span class="text-sm text-muted-foreground">↓</span></div>
               </template>
             </div>
-
-            <div class="tracker-footer">
+            <div class="mt-4 flex flex-wrap gap-4 border-t border-border pt-3 text-xs text-muted-foreground">
               <span>任务 {{ buildTaskSnapshot?.taskId || activeBuildTaskId || '-' }}</span>
               <span>状态 {{ buildTaskSnapshot?.taskStatusName || (hasCode(documentDetail.indexStatus, 3) ? '成功' : '未知') }}</span>
-              <span>耗时 {{ formatDuration(buildTaskSnapshot?.costMillis) }}</span>
+              <span>耗时 {{ formatDuration(buildTaskSnapshot?.elapsedMillis || buildTaskSnapshot?.costMillis) }}</span>
             </div>
           </div>
         </section>
 
-        <section v-show="activeWorkbenchSection === 'chunk'" ref="chunkSectionRef" class="detail-section workbench-section" data-workbench-section="chunk">
-          <div class="workbench-section-head">
-            <div class="workbench-section-heading">
-              <span class="workbench-section-step-badge">Step 3</span>
-              <h2>验证 Chunk 结果</h2>
-              <p>在这里检查父子分块结构、分页浏览内容，并抽样验证切块是否符合预期。</p>
-            </div>
-            <div class="chunk-section-actions">
-              <span class="workbench-section-pill">{{ chunkSectionStatusText }}</span>
-              <span v-if="chunkQuery?.taskId">任务 {{ chunkQuery.taskId }} · {{ chunkQuery.total || 0 }} 条</span>
-              <span v-else>当前还没有可展示的 chunk</span>
-              <div v-if="chunkRecords.length" class="chunk-view-switch">
-                <button
-                  class="chunk-view-button"
-                  :class="{ active: chunkDisplayMode === 'grouped' }"
-                  type="button"
-                  @click="chunkDisplayMode = 'grouped'"
-                >
-                  按父块分组
-                </button>
-                <button
-                  class="chunk-view-button"
-                  :class="{ active: chunkDisplayMode === 'flat' }"
-                  type="button"
-                  @click="chunkDisplayMode = 'flat'"
-                >
-                  平铺列表
-                </button>
-                <button
-                  v-if="chunkDisplayMode === 'grouped'"
-                  class="chunk-view-button"
-                  type="button"
-                  @click="setAllChunkGroupsCollapsed(false)"
-                >
-                  展开全部
-                </button>
-                <button
-                  v-if="chunkDisplayMode === 'grouped'"
-                  class="chunk-view-button"
-                  type="button"
-                  @click="setAllChunkGroupsCollapsed(true)"
-                >
-                  折叠全部
-                </button>
+        <section v-show="activeWorkbenchSection === 'chunk'" ref="chunkSectionRef" class="mt-5" data-workbench-section="chunk">
+          <div v-if="chunkLoading" class="py-6 text-center text-sm text-muted-foreground">正在加载 子块 列表...</div>
+          <div v-else-if="!chunkRecords.length" class="rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">当前文档还没有 子块 数据。请先完成索引构建，或等待构建任务继续执行。</div>
+          <div v-else>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div class="flex flex-wrap gap-2">
+                <div v-for="s in chunkStats" :key="s.label" class="grid gap-1 rounded-lg border border-border bg-secondary px-4 py-3">
+                  <span class="text-xs text-muted-foreground">{{ s.label }}</span><strong class="text-sm text-foreground">{{ s.value }}</strong>
+                </div>
               </div>
+              <div class="flex gap-1 rounded-lg border border-border bg-secondary p-1">
+                <Button v-for="m in [{k:'grouped',l:'按父块分组'},{k:'flat',l:'平铺列表'}]" :key="m.k" variant="ghost" size="sm" :class="chunkDisplayMode===m.k?'bg-card text-foreground shadow-sm':'text-muted-foreground hover:text-foreground'" type="button" @click="chunkDisplayMode=m.k">{{ m.l }}</Button>
+                <Button v-if="chunkDisplayMode==='grouped'" variant="ghost" size="sm" type="button" @click="setAll子块GroupsCollapsed(false)">展开全部</Button>
+                <Button v-if="chunkDisplayMode==='grouped'" variant="ghost" size="sm" type="button" @click="setAll子块GroupsCollapsed(true)">折叠全部</Button>
             </div>
-          </div>
-
-          <div v-if="chunkLoading" class="empty-block compact-empty">正在加载 Chunk 列表...</div>
-          <div v-else-if="!chunkRecords.length" class="empty-block compact-empty">
-            当前文档还没有 Chunk 数据。请先完成索引构建，或等待构建任务继续执行。
-          </div>
-
-          <div v-else class="chunk-table-panel">
-            <div class="chunk-toolbar">
-              <article class="chunk-stat-card">
-                <span>父块数</span>
-                <strong>{{ formatCount(chunkParentCount) }}</strong>
-              </article>
-              <article class="chunk-stat-card">
-                <span>总片段</span>
-                <strong>{{ formatCount(chunkTotalCount) }}</strong>
-              </article>
-              <article class="chunk-stat-card">
-                <span>向量可用</span>
-                <strong>{{ formatCount(chunkVectorReadyCount) }}</strong>
-              </article>
-              <article class="chunk-stat-card">
-                <span>待处理</span>
-                <strong>{{ formatCount(chunkVectorPendingCount) }}</strong>
-              </article>
-              <article class="chunk-stat-card">
-                <span>平均 Token</span>
-                <strong>{{ formatCount(chunkAverageTokens) }}</strong>
-              </article>
             </div>
-
-            <div v-if="chunkDisplayMode === 'grouped'" class="chunk-group-list">
-              <article
-                v-for="group in chunkGroupedRecords"
-                :key="`parent-group-${group.parentBlockId || group.parentBlockNo}`"
-                class="chunk-group-card"
-                :class="{ collapsed: isChunkGroupCollapsed(group.groupKey) }"
-              >
-                <div class="chunk-group-head">
-                  <div class="chunk-group-head-main">
-                    <strong>父块 P#{{ group.parentBlockNo || '-' }}</strong>
-                    <p>{{ group.sectionPath || '未识别章节' }}</p>
-                  </div>
-                  <div class="chunk-group-head-side">
-                    <div class="chunk-group-head-actions">
-                      <button class="ghost-button chunk-group-detail-button" type="button" @click="openParentBlockDetail(group)">
-                        查看父块上下文
-                      </button>
-                      <button class="ghost-button chunk-group-toggle-button" type="button" @click="toggleChunkGroup(group.groupKey)">
-                        {{ isChunkGroupCollapsed(group.groupKey) ? '展开子块' : '折叠子块' }}
-                      </button>
-                    </div>
-                    <div class="chunk-group-meta">
-                      <span>子块 {{ group.items.length }}/{{ group.parentChildCount || group.items.length }}</span>
-                      <span>子块范围 C#{{ group.parentStartChunkNo || '-' }} - C#{{ group.parentEndChunkNo || '-' }}</span>
-                    </div>
+            <div v-if="chunkDisplayMode === 'grouped'" class="flex flex-col gap-4">
+              <article v-for="group in chunkGroupedRecords" :key="`parent-group-${group.parentBlockId||group.parentBlockNo}`" class="grid gap-0">
+                <div class="chunk-group-tone chunk-parent-head flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3.5"
+                  style="background: var(--pl-bg); border-color: var(--pl-border)">
+                  <h4 class="m-0 flex min-w-0 flex-wrap items-center gap-2.5 text-sm font-semibold" style="color: var(--pl-fg)">
+                    <span class="shrink-0 rounded-md px-2 py-0.5 text-micro font-bold text-white" style="background: var(--pl-solid)">P#{{ group.parentBlockNo || '-' }}</span>
+                    <span class="min-w-0 break-words">{{ group.sectionPath || '未识别章节' }}</span>
+                    <span class="shrink-0 font-normal opacity-70">{{ group.items.length }} 个子块</span>
+                  </h4>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" class="rounded-md border-border bg-card hover:bg-muted" size="lg" type="button" @click="openParentBlockDetail(group)">查看父块上下文</Button>
+                    <Button variant="outline" class="rounded-md border-border bg-card hover:bg-muted" size="sm" type="button" @click="toggle子块Group(group.groupKey)">{{ is子块GroupCollapsed(group.groupKey)?'展开子块':'折叠子块' }}</Button>
                   </div>
                 </div>
-
-                <div v-if="!isChunkGroupCollapsed(group.groupKey)" class="chunk-group-track">
-                  <button
-                    v-for="item in group.items"
-                    :key="`group-track-${item.chunkId}`"
-                    class="chunk-group-node"
-                    type="button"
-                    @click="openChunkDetail(item.chunkId)"
-                  >
-                    <strong>#{{ item.chunkNo || '-' }}</strong>
-                    <span>{{ formatCount(item.tokenCount) }} Token</span>
-                  </button>
-                </div>
-
-                <div v-if="!isChunkGroupCollapsed(group.groupKey)" class="chunk-group-table">
-                  <div class="chunk-table-head">
-                    <span>Chunk</span>
-                    <span>章节 / 标识</span>
-                    <span>来源 / 状态</span>
-                    <span>字符</span>
-                    <span>Token</span>
-                    <span>内容预览</span>
+                <template v-if="!is子块GroupCollapsed(group.groupKey)">
+                  <div class="chunk-rail">
+                    <div class="chunk-rail-item overflow-hidden rounded-lg border border-border">
+                      <div class="overflow-x-auto">
+                        <table class="w-full min-w-[640px] border-collapse text-sm table-fixed">
+                          <caption class="sr-only">按父块分组的文档子块列表</caption>
+                          <colgroup>
+                            <col style="width:130px">
+                            <col style="width:200px">
+                            <col style="width:120px">
+                            <col style="width:68px">
+                            <col style="width:68px">
+                            <col>
+                            <col style="width:100px">
+                          </colgroup>
+                          <thead><tr class="bg-secondary">
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">子块</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">章节 / 标识</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">来源 / 状态</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">字符</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Token</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">内容预览</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">操作</th>
+                          </tr></thead>
+                          <tbody>
+                            <tr v-for="item in group.items" :key="`group-row-${item.chunkId}`" class="border-t border-border transition-colors hover:bg-muted">
+                              <td class="p-4"><strong class="block text-compact font-semibold text-foreground">#{{ item.chunkNo }}</strong></td>
+                              <td class="p-4"><span class="block text-compact text-foreground">{{ item.sectionPath||'未识别章节' }}</span></td>
+                              <td class="px-3 py-4"><div class="flex flex-col items-start gap-1.5"><span class="text-xs text-muted-foreground">{{ item.sourceTypeName||'-' }}</span><AdminStatusBadge :label="item.vectorStatusName||'-'" :code="normalizeCode(item.vectorStatus)||'0'" type="vector" /></div></td>
+                              <td class="p-4 text-sm font-semibold text-foreground">{{ formatCount(item.charCount) }}</td>
+                              <td class="p-4 text-sm font-semibold text-foreground">{{ formatCount(item.tokenCount) }}</td>
+                              <td class="p-4"><p class="line-clamp-2 text-compact text-foreground">{{ item.chunkText }}</p></td>
+                              <td class="p-4"><Button variant="outline" size="sm" type="button" @click="open子块Detail(item.chunkId)">查看详情</Button></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
-                  <article
-                    v-for="item in group.items"
-                    :key="`group-row-${item.chunkId}`"
-                    class="chunk-row chunk-row-clickable"
-                    @click="openChunkDetail(item.chunkId)"
-                  >
-                    <div class="chunk-cell chunk-cell-index" data-label="Chunk">
-                      <strong>子块 C#{{ item.chunkNo }}</strong>
-                      <span>{{ item.chunkId }}</span>
-                      <span class="chunk-relation-hint">{{ buildChunkRelationText(item) }}</span>
-                    </div>
-                    <div class="chunk-cell chunk-cell-section" data-label="章节 / 标识">
-                      <strong>{{ item.sectionPath || '未识别章节' }}</strong>
-                      <span>父块 P#{{ item.parentBlockNo || '-' }} · 共 {{ item.parentChildCount || 0 }} 子块</span>
-                    </div>
-                    <div class="chunk-cell chunk-cell-status" data-label="来源 / 状态">
-                      <span class="chunk-chip">{{ item.sourceTypeName || '未知来源' }}</span>
-                      <span class="chunk-chip" :class="`chunk-chip-${normalizeCode(item.vectorStatus) || '0'}`">
-                        {{ item.vectorStatusName || '未知状态' }}
-                      </span>
-                    </div>
-                    <div class="chunk-cell" data-label="字符">
-                      <strong>{{ formatCount(item.charCount) }}</strong>
-                    </div>
-                    <div class="chunk-cell" data-label="Token">
-                      <strong>{{ formatCount(item.tokenCount) }}</strong>
-                    </div>
-                    <div class="chunk-cell chunk-cell-content" data-label="内容预览">
-                      <p class="chunk-body">{{ item.chunkText }}</p>
-                    </div>
-                  </article>
-                </div>
+                </template>
               </article>
             </div>
-
-            <div v-else class="chunk-table">
-              <div class="chunk-table-head">
-                <span>Chunk</span>
-                <span>章节 / 标识</span>
-                <span>来源 / 状态</span>
-                <span>字符</span>
-                <span>Token</span>
-                <span>内容预览</span>
-              </div>
-
-              <article
-                v-for="item in chunkRecords"
-                :key="item.chunkId"
-                class="chunk-row chunk-row-clickable"
-                @click="openChunkDetail(item.chunkId)"
-              >
-                <div class="chunk-cell chunk-cell-index" data-label="Chunk">
-                  <strong>子块 C#{{ item.chunkNo }}</strong>
-                  <span>{{ item.chunkId }}</span>
-                  <span class="chunk-relation-hint">{{ buildChunkRelationText(item) }}</span>
-                </div>
-                <div class="chunk-cell chunk-cell-section" data-label="章节 / 标识">
-                  <strong>{{ item.sectionPath || '未识别章节' }}</strong>
-                  <span>父块 P#{{ item.parentBlockNo || '-' }} · 共 {{ item.parentChildCount || 0 }} 子块</span>
-                </div>
-                <div class="chunk-cell chunk-cell-status" data-label="来源 / 状态">
-                  <span class="chunk-chip">{{ item.sourceTypeName || '未知来源' }}</span>
-                  <span class="chunk-chip" :class="`chunk-chip-${normalizeCode(item.vectorStatus) || '0'}`">
-                    {{ item.vectorStatusName || '未知状态' }}
-                  </span>
-                </div>
-                <div class="chunk-cell" data-label="字符">
-                  <strong>{{ formatCount(item.charCount) }}</strong>
-                </div>
-                <div class="chunk-cell" data-label="Token">
-                  <strong>{{ formatCount(item.tokenCount) }}</strong>
-                </div>
-                <div class="chunk-cell chunk-cell-content" data-label="内容预览">
-                  <p class="chunk-body">{{ item.chunkText }}</p>
-                </div>
-              </article>
+            <div v-else class="overflow-x-auto rounded-lg border border-border">
+              <table class="w-full min-w-[640px] border-collapse text-sm table-fixed">
+                <caption class="sr-only">文档子块列表</caption>
+                <colgroup>
+                  <col style="width:130px">
+                  <col style="width:200px">
+                  <col style="width:120px">
+                  <col style="width:68px">
+                  <col style="width:68px">
+                  <col>
+                  <col style="width:100px">
+                </colgroup>
+                <thead><tr class="bg-secondary">
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">子块</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">章节 / 标识</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">来源 / 状态</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">字符</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Token</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">内容预览</th>
+                  <th scope="col" class="border-b border-border px-4 py-3 text-left text-xs font-semibold text-muted-foreground">操作</th>
+                </tr></thead>
+                <tbody>
+                  <tr v-for="item in chunkRecords" :key="item.chunkId" class="border-b border-border transition-colors hover:bg-muted last:border-0">
+                    <td class="p-4"><strong class="block text-compact font-semibold text-foreground">#{{ item.chunkNo }}</strong></td>
+                    <td class="p-4"><span class="block text-compact text-foreground">{{ item.sectionPath||'未识别章节' }}</span></td>
+                    <td class="px-3 py-4"><div class="flex flex-col items-start gap-1.5"><span class="text-xs text-muted-foreground">{{ item.sourceTypeName||'-' }}</span><AdminStatusBadge :label="item.vectorStatusName||'-'" :code="normalizeCode(item.vectorStatus)||'0'" type="vector" /></div></td>
+                    <td class="p-4 text-sm font-semibold text-foreground">{{ formatCount(item.charCount) }}</td>
+                    <td class="p-4 text-sm font-semibold text-foreground">{{ formatCount(item.tokenCount) }}</td>
+                    <td class="p-4"><p class="line-clamp-3 text-compact text-foreground">{{ item.chunkText }}</p></td>
+                    <td class="p-4"><Button variant="outline" size="sm" type="button" @click="open子块Detail(item.chunkId)">查看详情</Button></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-
-            <div class="pagination-bar chunk-pagination-bar">
-              <button
-                class="ghost-button"
-                type="button"
-                :disabled="chunkCurrentPage <= 1 || chunkLoading"
-                @click="changeChunkPage(chunkCurrentPage - 1)"
-              >
-                上一页
-              </button>
-              <div class="pagination-status">
-                <label class="page-size-control">
-                  <span>每页显示</span>
-                  <select
-                    class="page-size-select"
-                    :value="chunkCurrentPageSize"
-                    :disabled="chunkLoading"
-                    @change="changeChunkPageSize($event.target.value)"
-                  >
-                    <option v-for="size in chunkPageSizeOptions" :key="`chunk-page-size-${size}`" :value="size">
-                      {{ size }} 条
-                    </option>
-                  </select>
-                </label>
-                <strong>第 {{ chunkCurrentPage }} / {{ chunkTotalPages }} 页</strong>
-                <span>共 {{ chunkTotalCount }} 条 Chunk，当前页 {{ chunkRecords.length }} 条</span>
+            <div class="mt-4 flex items-center justify-between gap-3 max-sm:flex-col">
+              <Button variant="outline" class="rounded-md" size="lg" type="button" :disabled="chunkCurrentPage<=1||chunkLoading" @click="change子块Page(chunkCurrentPage-1)">上一页</Button>
+              <div class="flex flex-wrap items-center gap-3 text-sm">
+                <label class="flex items-center gap-2 text-muted-foreground">每页显示<Select :model-value="String(chunkCurrentPageSize)" :disabled="chunkLoading" @update:model-value="change子块PageSize">
+                  <SelectTrigger class="rounded-md border border-border bg-card px-2 py-1 text-foreground h-auto w-auto inline-flex gap-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem v-for="size in chunkPageSizeOptions" :key="size" :value="String(size)">{{ size }} 条</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select></label>
+                <strong class="text-foreground">第 {{ chunkCurrentPage }} / {{ chunkTotalPages }} 页</strong>
+                <span class="text-muted-foreground">共 {{ chunkTotalCount }} 条</span>
               </div>
-              <button
-                class="ghost-button"
-                type="button"
-                :disabled="chunkCurrentPage >= chunkTotalPages || chunkLoading"
-                @click="changeChunkPage(chunkCurrentPage + 1)"
-              >
-                下一页
-              </button>
+              <Button variant="outline" class="rounded-md" size="lg" type="button" :disabled="chunkCurrentPage>=chunkTotalPages||chunkLoading" @click="change子块Page(chunkCurrentPage+1)">下一页</Button>
             </div>
           </div>
         </section>
 
-        <section v-show="activeWorkbenchSection === 'tasks'" ref="taskSectionRef" class="detail-section workbench-section" data-workbench-section="tasks">
-          <div class="workbench-section-head">
-            <div class="workbench-section-heading">
-              <span class="workbench-section-step-badge">Step 4</span>
-              <h2>查看任务记录</h2>
-              <p>通过最近任务摘要和完整时间线快速复盘当前文档的执行过程与异常信息。</p>
-            </div>
-            <div class="task-section-actions">
-              <span class="workbench-section-pill">{{ taskSectionStatusText }}</span>
-              <button class="ghost-button" type="button" :disabled="!documentDetail.latestTaskId" @click="openLogDrawer">
-                查看完整任务时间线
-              </button>
+        <section v-show="activeWorkbenchSection === 'tasks'" ref="taskSectionRef" class="mt-5" data-workbench-section="tasks">
+          <div class="mb-4 flex items-center justify-between gap-3 max-md:flex-col max-md:items-start">
+            <h2 class="text-base font-semibold text-foreground">查看任务记录</h2>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground">{{ taskSectionStatusText }}</span>
+              <Button variant="outline" size="sm" class="rounded-md border border-border bg-card disabled:opacity-60" type="button" :disabled="!documentDetail.latestTaskId" @click="openLogDrawer">查看完整任务时间线</Button>
             </div>
           </div>
-
-          <div v-if="logLoading" class="empty-block compact-empty">正在加载任务日志...</div>
-          <div v-else-if="!taskLogs.length" class="empty-block compact-empty">当前文档还没有可查看的任务日志。</div>
-
-          <div v-else class="summary-log-list">
-            <article v-for="log in taskLogs.slice(0, 3)" :key="log.id" class="summary-log-item">
-              <div class="summary-log-head">
-                <strong>{{ log.stageTypeName }} · {{ log.eventTypeName }}</strong>
-                <span>{{ formatDateTime(log.createTime) }}</span>
-              </div>
-              <p>{{ log.content }}</p>
+          <div v-if="logLoading" class="py-6 text-center text-sm text-muted-foreground">正在加载任务日志...</div>
+          <div v-else-if="!taskLogs.length" class="rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">当前文档还没有可查看的任务日志。</div>
+          <div v-else class="flex flex-col gap-3">
+            <article v-for="log in taskLogs.slice(0,3)" :key="log.id" class="rounded-lg border border-border bg-secondary p-3.5">
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs"><strong class="text-foreground">{{ log.stageTypeName }} · {{ log.eventTypeName }}</strong><span class="text-muted-foreground">{{ formatDateTime(log.createTime) }}</span></div>
+              <p class="text-compact text-[var(--muted-foreground)]">{{ log.content }}</p>
             </article>
           </div>
         </section>
       </div>
     </article>
 
-    <div v-else class="empty-block">
-      正在加载文档详情...
-    </div>
+    <div v-else class="rounded-md border border-dashed border-border py-10 text-center text-sm text-muted-foreground">正在加载文档详情...</div>
   </section>
 </template>
-
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ArrowDownIcon, ArrowLeftIcon, ArrowPathIcon, ArrowRightIcon, CheckCircleIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, ExclamationCircleIcon, EyeIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { APIError, manageApi } from '../../api/api'
 import AdminStatusBadge from '../../components/admin/AdminStatusBadge.vue'
+import DocumentTaskHistoryDialog from '../../components/admin/DocumentTaskHistoryDialog.vue'
+import ChildPageDialog from '@/components/system/ChildPageDialog.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatCount, formatDateTime, hasCode, normalizeCode } from '../../utils/manageFormat'
 import {
   STRATEGY_LIBRARY,
   STRATEGY_PIPELINE_LIBRARY,
-  buildPipelineStepPayload,
   buildStrategyPreview,
   buildStrategySignature,
   extractPipelineStrategyTypes,
   normalizeStrategyTypeList,
   resolvePlanPipeline
 } from '../../utils/documentStrategyPipeline'
+import {
+  buildIndexRequest,
+  buildStrategyConfirmRequest,
+  createSubmissionGuard,
+  mergeIncrementalLogs,
+  resolveWorkflowStepTone
+} from '@/features/admin/documentWorkflow'
 
 const route = useRoute()
 const router = useRouter()
@@ -967,6 +531,8 @@ const WORKBENCH_SECTION_KEYS = ['overview', 'strategy', 'execution', 'chunk', 't
 
 const strategyLibrary = STRATEGY_LIBRARY
 const strategyPipelineLibrary = STRATEGY_PIPELINE_LIBRARY
+const confirmSubmissionGuard = createSubmissionGuard()
+const buildSubmissionGuard = createSubmissionGuard()
 
 const BUILD_STAGE_LIBRARY = [
   { code: '5', order: '01', label: '切块执行', description: '按照当前策略链路生成原始 chunk' },
@@ -1002,6 +568,8 @@ const logDrawerOpen = ref(false)
 const chunkDetailDrawerOpen = ref(false)
 const planPollTimer = ref(null)
 const buildPollTimer = ref(null)
+const buildProgressLatestLogId = ref(null)
+const buildProgressNoticeStage = ref(null)
 const buildTrackerRef = ref(null)
 const parentBlockSectionRef = ref(null)
 const overviewSectionRef = ref(null)
@@ -1070,8 +638,8 @@ const chunkGroupedRecords = computed(() => {
         parentBlockId: item.parentBlockId,
         parentBlockNo: item.parentBlockNo,
         parentChildCount: item.parentChildCount,
-        parentStartChunkNo: item.parentStartChunkNo,
-        parentEndChunkNo: item.parentEndChunkNo,
+        parentStart子块No: item.parentStart子块No,
+        parentEnd子块No: item.parentEnd子块No,
         sectionPath: item.sectionPath,
         items: []
       })
@@ -1088,6 +656,9 @@ const chunkGroupedRecords = computed(() => {
 })
 const hasBuildTaskSnapshot = computed(() => hasCode(buildTaskSnapshot.value?.taskType, 2))
 const activeBuildTaskId = computed(() => {
+  if (hasBuildTaskSnapshot.value && buildTaskSnapshot.value?.taskId) {
+    return buildTaskSnapshot.value.taskId
+  }
   if (hasCode(documentDetail.value?.latestTaskType, 2)) {
     return documentDetail.value?.latestTaskId || ''
   }
@@ -1164,6 +735,12 @@ const buildStepState = computed(() => {
   }
   return 'ready'
 })
+
+const confirmStepVisual = computed(() => workflowStepVisual('confirm', confirmStepState.value))
+const buildStepVisual = computed(() => workflowStepVisual('build', buildStepState.value))
+// 模板要按语义分支选图标，而 *StepVisual 只带 class 串，所以单独把 tone 暴露出来。
+const confirmStepTone = computed(() => resolveWorkflowStepTone('confirm', confirmStepState.value))
+const buildStepTone = computed(() => resolveWorkflowStepTone('build', buildStepState.value))
 
 const strategySystemStages = computed(() => {
   const parseStatus = normalizeCode(documentDetail.value?.parseStatus)
@@ -1328,7 +905,7 @@ const workflowCurrentPhase = computed(() => {
   }
   if (hasBuildInFlightStatus.value) {
     return {
-      tone: 'primary',
+      tone: 'running',
       shortLabel: '执行中',
       title: `正在${activeBuildStageLabel.value || '构建索引'}`,
       description: '索引构建正在执行，页面会持续刷新阶段轨迹与任务状态。'
@@ -1355,7 +932,7 @@ const workflowCurrentPhase = computed(() => {
       tone: 'success',
       shortLabel: '已完成',
       title: '索引已可用',
-      description: '最近一次索引构建已经完成，可以开始验证 Chunk 和回看任务记录。'
+      description: '最近一次索引构建已经完成，可以开始验证分块和回看任务记录。'
     }
   }
   return {
@@ -1410,9 +987,147 @@ const workflowNextAction = computed(() => {
     }
   }
   return {
-    title: '验证 Chunk 与任务记录',
+    title: '验证分块与任务记录',
     description: '索引已经可用，建议先检查分块效果，再复盘任务时间线。'
   }
+})
+
+// Single primary action for the overview action band. Always resolves to a safe navigation
+// target (open a dialog or switch to the owning section); the actual confirm/build guards still
+// live in their own sections. label follows the same state ladder as workflowCurrentPhase.
+const overviewPrimaryAction = computed(() => {
+  if (documentDetail.value?.parseErrorMsg || hasCode(documentDetail.value?.parseStatus, 4)) {
+    return { label: '查看任务记录', target: 'tasks' }
+  }
+  if (!hasCode(documentDetail.value?.parseStatus, 3)) {
+    return { label: '刷新详情', action: 'refresh' }
+  }
+  if (!strategyPlan.value?.planReady || !hasSelectedStrategy.value) {
+    return { label: '配置策略', target: 'strategy' }
+  }
+  if (!hasConfirmedStrategy.value || hasUnconfirmedStrategyChanges.value) {
+    return { label: '确认并构建', target: 'execution' }
+  }
+  if (hasBuildInFlightStatus.value) {
+    return { label: '查看构建进度', target: 'execution' }
+  }
+  if (!hasCode(documentDetail.value?.indexStatus, 3)) {
+    return { label: '执行构建索引', target: 'execution' }
+  }
+  return { label: '验证分块结果', target: 'chunk' }
+})
+
+function runOverviewPrimaryAction() {
+  const action = overviewPrimaryAction.value
+  if (action.action === 'refresh') {
+    loadAll()
+    return
+  }
+  if (action.target) {
+    scrollToWorkbenchSection(action.target)
+  }
+}
+
+const workflowSteps = computed(() => {
+  const d = documentDetail.value || {}
+  const parseFailed = Boolean(d.parseErrorMsg) || hasCode(d.parseStatus, 4)
+  const parseDone = hasCode(d.parseStatus, 3)
+  const planReady = Boolean(strategyPlan.value?.planReady)
+  const confirmed = hasConfirmedStrategy.value && !hasUnconfirmedStrategyChanges.value
+  const building = hasBuildInFlightStatus.value
+  const indexDone = hasCode(d.indexStatus, 3)
+  const state = (done, current, failed = false) => failed ? 'failed' : done ? 'done' : current ? 'current' : 'pending'
+  return [
+    { key: 'parse', label: '解析', state: state(parseDone, !parseDone && !parseFailed, parseFailed) },
+    { key: 'recommend', label: '策略推荐', state: state(planReady, parseDone && !planReady) },
+    { key: 'confirm', label: '确认方案', state: state(confirmed, planReady && !confirmed) },
+    { key: 'build', label: '构建索引', state: state(indexDone, building || (confirmed && !indexDone)) },
+    // Terminal node becomes the single brand focus once reached, so a fully-done track still has
+    // one clear anchor instead of an all-neutral (lifeless) row.
+    { key: 'done', label: '可用', state: indexDone ? 'current' : 'pending' }
+  ]
+})
+function stepDotClass(state) {
+  if (state === 'done') return 'bg-[var(--status-success-fg)] text-white'
+  if (state === 'current') return 'bg-primary text-white ring-4 ring-primary/15'
+  if (state === 'failed') return 'bg-destructive text-white'
+  return 'bg-foreground/[0.08] text-muted-foreground'
+}
+function stepLineClass(state) {
+  return state === 'done' ? 'bg-[var(--status-success-fg)]/50' : 'bg-border'
+}
+
+// Status-track node visual. Done steps read as calm hollow success ticks; the single current
+// step is the solid focus (primary fuchsia, or running teal when a build is executing); failed
+// is solid danger; pending stays neutral. Colour is never the only signal — a tick / number /
+// dot shape and the label below each carry the same state.
+function trackNodeVisual(state, running = false) {
+  if (state === 'done') {
+    // Completed: solid brand fuchsia + white check. Line also turns fuchsia so the whole
+    // traversed chain reads as one continuous progress fill.
+    return {
+      node: 'bg-primary border-2 border-primary text-primary-foreground',
+      label: 'text-muted-foreground',
+      line: 'bg-primary/50'
+    }
+  }
+  if (state === 'current') {
+    if (running) {
+      return {
+        node: 'border-2 border-[var(--status-running-fg)] bg-[var(--status-running-fg)] text-white ring-4 ring-[var(--status-running-fg)]/15',
+        label: 'font-semibold text-[var(--status-running-fg)]',
+        line: 'bg-border'
+      }
+    }
+    return {
+      node: 'border-2 border-primary bg-primary text-white ring-4 ring-primary/15',
+      label: 'font-semibold text-primary',
+      line: 'bg-border'
+    }
+  }
+  if (state === 'failed') {
+    return {
+      node: 'border-2 border-destructive bg-destructive text-white',
+      label: 'font-semibold text-destructive',
+      line: 'bg-border'
+    }
+  }
+  return {
+    node: 'border-2 border-border bg-card text-muted-foreground',
+    label: 'text-muted-foreground',
+    line: 'bg-border'
+  }
+}
+
+// Map the strategy system-stage status vocabulary onto the shared track-node states.
+// The terminal stage, once completed, becomes the single brand focus (matches the overview
+// track's terminal node) instead of fading into the neutral done treatment.
+function strategyStageState(status, isTerminal = false) {
+  if (status === 'completed') return isTerminal ? 'current' : 'done'
+  if (status === 'current') return 'current'
+  if (status === 'failed') return 'failed'
+  return 'pending'
+}
+
+// Key-indicator band. Every value is a real, already-loaded field — no invented metrics.
+const documentMetrics = computed(() => {
+  const activeParent = hasConfirmedStrategy.value ? confirmedParentStrategyTypes.value : selectedParentStrategyTypes.value
+  const activeChild = hasConfirmedStrategy.value ? confirmedChildStrategyTypes.value : selectedChildStrategyTypes.value
+  const pipelineReady = strategyPlan.value?.planReady
+  const indexReady = hasCode(documentDetail.value?.indexStatus, 3)
+  return [
+    { key: 'chunks', label: '子块总数', value: formatCount(chunkTotalCount.value), hint: '检索召回片段', tone: indexReady ? 'success' : 'neutral' },
+    { key: 'parents', label: '父块数', value: formatCount(chunkParentCount.value), hint: '回答阶段边界', tone: 'neutral' },
+    { key: 'samples', label: '任务阶段', value: formatCount(taskLogs.value.length), hint: '普通版任务日志', tone: 'neutral' },
+    {
+      key: 'pipeline',
+      label: '生效策略',
+      value: pipelineReady ? `父 ${activeParent.length} · 子 ${activeChild.length}` : '待推荐',
+      hint: '父 / 子流水线',
+      tone: 'neutral'
+    },
+    { key: 'tasks', label: '任务日志', value: formatCount(taskLogs.value.length), hint: '构建与操作记录', tone: 'neutral' }
+  ]
 })
 
 const strategySectionStatusText = computed(() => {
@@ -1508,7 +1223,7 @@ const workbenchSections = computed(() => {
     {
       key: 'chunk',
       step: '03',
-      label: '验证 Chunk 结果',
+      label: '验证分块结果',
       caption: '检查分块结果与分页',
       status: chunkSectionStatusText.value
     },
@@ -1623,22 +1338,30 @@ function clearNotice() {
   pageNotice.message = ''
 }
 
-function buildChunkRelationText(chunk) {
+function asArray(value) {
+  return Array.isArray(value) ? value : []
+}
+
+function firstQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function build子块RelationText(chunk) {
   if (!chunk) {
     return '父子关系未知'
   }
   const parentNo = chunk.parentBlockNo || '-'
   const total = Number(chunk.parentChildCount || 0)
-  const currentChunkNo = Number(chunk.chunkNo || 0)
-  const startChunkNo = Number(chunk.parentStartChunkNo || 0)
-  if (total > 0 && currentChunkNo > 0 && startChunkNo > 0) {
-    const siblingIndex = currentChunkNo - startChunkNo + 1
+  const current子块No = Number(chunk.chunkNo || 0)
+  const start子块No = Number(chunk.parentStart子块No || 0)
+  if (total > 0 && current子块No > 0 && start子块No > 0) {
+    const siblingIndex = current子块No - start子块No + 1
     return `父块 P#${parentNo} · 同父第 ${siblingIndex}/${total} 子块`
   }
   return `父块 P#${parentNo} · 共 ${total || 0} 子块`
 }
 
-function isCurrentChunk(chunk) {
+function isCurrent子块(chunk) {
   return normalizeCode(chunk?.chunkId) === normalizeCode(chunkDetail.value?.chunk?.chunkId)
 }
 
@@ -1654,18 +1377,22 @@ function formatChunkCodeList(chunks) {
     .join('、')
 }
 
-function isChunkGroupCollapsed(groupKey) {
+function format子块CodeList(子块) {
+  return formatChunkCodeList(子块)
+}
+
+function is子块GroupCollapsed(groupKey) {
   return Boolean(chunkGroupCollapsedMap.value[groupKey])
 }
 
-function toggleChunkGroup(groupKey) {
+function toggle子块Group(groupKey) {
   chunkGroupCollapsedMap.value = {
     ...chunkGroupCollapsedMap.value,
     [groupKey]: !chunkGroupCollapsedMap.value[groupKey]
   }
 }
 
-function setAllChunkGroupsCollapsed(collapsed) {
+function setAll子块GroupsCollapsed(collapsed) {
   const nextMap = {}
   chunkGroupedRecords.value.forEach((group) => {
     nextMap[group.groupKey] = collapsed
@@ -1756,6 +1483,40 @@ function moveStrategy(type, direction, pipelineKey) {
   setSelectedStrategyTypes(pipelineKey, nextList)
 }
 
+// Selected steps with the system's recommend reason folded in, so the "推荐" readout and the
+// editable chain are one list instead of two copies of the same data.
+function getPipelineStepRows(pipelineKey) {
+  const recommendedSteps = resolvePlanPipeline(strategyPlan.value?.plan, pipelineKey)?.steps || []
+  const reasonByType = new Map(recommendedSteps.map((step) => [normalizeCode(step.strategyType), step.recommendReason]))
+  const recommendedTypeSet = new Set(recommendedSteps.map((step) => normalizeCode(step.strategyType)))
+  return getSelectedStrategyPreview(pipelineKey).map((item, index) => ({
+    ...item,
+    order: index + 1,
+    recommendReason: reasonByType.get(normalizeCode(item.type)) || '',
+    recommended: recommendedTypeSet.has(normalizeCode(item.type))
+  }))
+}
+
+// Palette lists only strategies not already in the chain, removing the duplicate "已选/点击添加"
+// grid — a selected strategy lives in the chain above, never twice.
+function getPaletteStrategies(pipelineKey) {
+  const selected = getSelectedStrategyTypes(pipelineKey)
+  return strategyLibrary.filter((item) => !selected.includes(normalizeCode(item.type)))
+}
+
+// Whether the current chain already equals the system recommendation (hide restore when identical).
+function pipelineMatchesRecommendation(pipelineKey) {
+  const recommendedTypes = extractPipelineStrategyTypes(strategyPlan.value?.plan, pipelineKey, strategyLibrary)
+  return buildStrategySignature(getSelectedStrategyTypes(pipelineKey), strategyLibrary) === buildStrategySignature(recommendedTypes, strategyLibrary)
+}
+
+function restoreRecommendedPipeline(pipelineKey) {
+  if (hasBuildInFlightStatus.value) {
+    return
+  }
+  setSelectedStrategyTypes(pipelineKey, extractPipelineStrategyTypes(strategyPlan.value?.plan, pipelineKey, strategyLibrary))
+}
+
 function focusBuildTracker() {
   nextTick(() => {
     buildTrackerRef.value?.scrollIntoView({
@@ -1825,15 +1586,66 @@ async function loadBuildTaskLogs() {
   }
 }
 
+async function loadBuildProgress(options = {}) {
+  return null
+}
+
+function applyBuildProgress(data, resetLogs = false) {
+  if (!data) {
+    return
+  }
+  const previousTaskStatus = normalizeCode(buildTaskSnapshot.value?.taskStatus)
+  const previous = resetLogs ? [] : asArray(buildTaskSnapshot.value?.logs)
+  const mergedLogs = mergeTaskLogs(previous, asArray(data.logs))
+  buildTaskSnapshot.value = {
+    ...buildTaskSnapshot.value,
+    ...data,
+    logs: mergedLogs
+  }
+  buildProgressLatestLogId.value = data.latestLogId || latestLogId(mergedLogs) || buildProgressLatestLogId.value || null
+  if (hasCode(data.taskStatus, 4)) {
+    buildProgressNoticeStage.value = null
+    showNotice(data.errorMsg || '索引构建失败，请查看当前任务轨迹里的失败阶段。', 'danger')
+  } else if (hasCode(data.taskStatus, 3) && previousTaskStatus !== '3') {
+    buildProgressNoticeStage.value = null
+  } else if (data.building === true && data.currentStageName && normalizeCode(data.currentStage) !== buildProgressNoticeStage.value) {
+    buildProgressNoticeStage.value = normalizeCode(data.currentStage)
+    showNotice(`索引构建进行中：${data.currentStageName}`, 'info')
+  }
+  if (documentDetail.value) {
+    documentDetail.value = {
+      ...documentDetail.value,
+      indexStatus: data.indexStatus ?? documentDetail.value.indexStatus,
+      indexStatusName: data.indexStatusName || documentDetail.value.indexStatusName,
+      latestTaskId: data.taskId || documentDetail.value.latestTaskId,
+      latestTaskType: data.taskType || documentDetail.value.latestTaskType,
+      latestTaskTypeName: data.taskTypeName || documentDetail.value.latestTaskTypeName,
+      latestTaskStatus: data.taskStatus || documentDetail.value.latestTaskStatus,
+      latestTaskStatusName: data.taskStatusName || documentDetail.value.latestTaskStatusName
+    }
+  }
+}
+
+function mergeTaskLogs(previousLogs, incomingLogs) {
+  return mergeIncrementalLogs(previousLogs, incomingLogs)
+}
+
+function latestLogId(logs) {
+  return asArray(logs)
+    .map((item) => Number(item?.id || 0))
+    .filter((id) => Number.isFinite(id) && id > 0)
+    .reduce((max, id) => Math.max(max, id), 0) || null
+}
+
 async function loadDocumentChunks(page = chunkCurrentPage.value, options = {}) {
   const {
     resetCollapse = true,
-    resetChunkDetail = false
+    reset子块Detail = false
   } = options
 
   chunkLoading.value = true
   try {
-    if (resetChunkDetail) {
+    if (reset子块Detail) {
       chunkDetail.value = null
       chunkDetailDrawerOpen.value = false
       chunkDetailFocusMode.value = 'chunk'
@@ -1856,17 +1668,24 @@ async function loadDocumentChunks(page = chunkCurrentPage.value, options = {}) {
   }
 }
 
-function changeChunkPage(page) {
+function applyRouteWorkbenchFocus() {
+  const section = firstQueryValue(route.query?.section)
+  if (section && WORKBENCH_SECTION_KEYS.includes(section)) {
+    activeWorkbenchSection.value = section
+  }
+}
+
+function change子块Page(page) {
   if (page < 1 || page > chunkTotalPages.value || page === chunkCurrentPage.value || chunkLoading.value) {
     return
   }
   loadDocumentChunks(page, {
     resetCollapse: true,
-    resetChunkDetail: true
+    reset子块Detail: true
   })
 }
 
-function changeChunkPageSize(pageSize) {
+function change子块PageSize(pageSize) {
   const nextPageSize = Number(pageSize || DEFAULT_CHUNK_PAGE_SIZE)
   if (!Number.isFinite(nextPageSize) || nextPageSize <= 0 || nextPageSize === chunkCurrentPageSize.value || chunkLoading.value) {
     return
@@ -1875,7 +1694,7 @@ function changeChunkPageSize(pageSize) {
   chunkPageNo.value = 1
   loadDocumentChunks(1, {
     resetCollapse: true,
-    resetChunkDetail: true
+    reset子块Detail: true
   })
 }
 
@@ -1911,26 +1730,32 @@ async function submitConfirmStrategy() {
     showNotice('索引构建执行中，暂时不能修改或确认策略方案。', 'danger')
     return
   }
-
-  confirmLoading.value = true
-  clearNotice()
-  try {
-    await manageApi.confirmStrategy({
-      documentId: documentId.value,
-      basePlanId: strategyPlan.value.plan.planId,
-      adjustNote: adjustNote.value.trim(),
-      operatorId: OPERATOR_ID,
-      parentSteps: buildPipelineStepPayload(selectedParentStrategyTypes.value, strategyLibrary),
-      childSteps: buildPipelineStepPayload(selectedChildStrategyTypes.value, strategyLibrary)
-    })
-    showNotice('策略方案已确认，接下来可以直接构建索引。', 'success')
-    await loadAll()
-  } catch (error) {
-    console.error('确认策略失败', error)
-    showNotice(normalizeError(error, '确认策略失败'), 'danger')
-  } finally {
-    confirmLoading.value = false
+  if (confirmSubmissionGuard.pending()) {
+    showNotice('策略方案正在提交，请等待当前结果。', 'info')
+    return
   }
+
+  await confirmSubmissionGuard.run(async () => {
+    confirmLoading.value = true
+    clearNotice()
+    try {
+      await manageApi.confirmStrategy(buildStrategyConfirmRequest({
+        documentId: documentId.value,
+        basePlanId: strategyPlan.value.plan.planId,
+        adjustNote: adjustNote.value,
+        operatorId: OPERATOR_ID,
+        parentTypes: selectedParentStrategyTypes.value,
+        childTypes: selectedChildStrategyTypes.value
+      }, strategyLibrary))
+      showNotice('策略方案已确认，接下来可以直接构建索引。', 'success')
+      await loadAll()
+    } catch (error) {
+      console.error('确认策略失败', error)
+      showNotice(normalizeError(error, '确认策略失败'), 'danger')
+    } finally {
+      confirmLoading.value = false
+    }
+  })
 }
 
 async function submitBuildIndex() {
@@ -1950,28 +1775,39 @@ async function submitBuildIndex() {
     showNotice('索引构建正在执行中，请等待当前任务完成。', 'info')
     return
   }
-
-  buildLoading.value = true
-  clearNotice()
-  try {
-    const result = await manageApi.buildIndex({
-      documentId: documentId.value,
-      planId: documentDetail.value.currentPlanId,
-      operatorId: OPERATOR_ID
-    })
-    showNotice(`索引任务 ${result.taskId} 已创建，系统正在异步构建中。`, 'success')
-    await loadAll()
-    startBuildPolling()
-    focusBuildTracker()
-  } catch (error) {
-    console.error('构建索引失败', error)
-    showNotice(normalizeError(error, '构建索引失败'), 'danger')
-  } finally {
-    buildLoading.value = false
+  if (buildSubmissionGuard.pending()) {
+    showNotice('索引构建请求正在提交，请等待当前结果。', 'info')
+    return
   }
+
+  await buildSubmissionGuard.run(async () => {
+    buildLoading.value = true
+    clearNotice()
+    try {
+      const result = await manageApi.buildIndex(buildIndexRequest({
+        documentId: documentId.value,
+        currentPlanId: documentDetail.value.currentPlanId,
+        confirmed: hasConfirmedStrategy.value,
+        dirty: hasUnconfirmedStrategyChanges.value,
+        operatorId: OPERATOR_ID
+      }))
+      showNotice(`索引任务 ${result.taskId} 已创建，系统正在异步构建中。`, 'success')
+      await Promise.all([
+        loadDocumentDetail(),
+        loadTaskLogs(),
+        loadDocumentChunks(chunkCurrentPage.value, { resetCollapse: false })
+      ])
+      focusBuildTracker()
+    } catch (error) {
+      console.error('构建索引失败', error)
+      showNotice(normalizeError(error, '构建索引失败'), 'danger')
+    } finally {
+      buildLoading.value = false
+    }
+  })
 }
 
-async function openChunkDetail(chunkId, focusMode = 'chunk') {
+async function open子块Detail(chunkId, focusMode = 'chunk') {
   if (!chunkId) {
     return
   }
@@ -2001,7 +1837,7 @@ function openParentBlockDetail(group) {
   if (!group?.items?.length) {
     return
   }
-  openChunkDetail(group.items[0].chunkId, 'parent')
+  open子块Detail(group.items[0].chunkId, 'parent')
 }
 
 function openLogDrawer() {
@@ -2009,13 +1845,35 @@ function openLogDrawer() {
   loadTaskLogs()
 }
 
+function handleLogDialogOpen(open) {
+  if (open) {
+    logDrawerOpen.value = true
+    return
+  }
+  closeLogDrawer()
+}
+
+function handleBuildDialogOpen(open) {
+  if (!open && showBuildBlockingOverlay.value) {
+    showNotice('构建正在执行，完成前不能关闭进度。', 'info')
+  }
+}
+
 function closeLogDrawer() {
   logDrawerOpen.value = false
 }
 
-function closeChunkDetailDrawer() {
+function close子块DetailDrawer() {
   chunkDetailDrawerOpen.value = false
   chunkDetailFocusMode.value = 'chunk'
+}
+
+function handleChunkDialogOpen(open) {
+  if (open) {
+    chunkDetailDrawerOpen.value = true
+    return
+  }
+  close子块DetailDrawer()
 }
 
 function clearBuildPolling() {
@@ -2042,6 +1900,18 @@ function startBuildPolling() {
       clearBuildPolling()
     }
   }, 3000)
+}
+
+async function refreshBuildCompletionArtifacts() {
+  try {
+    await loadDocumentDetail()
+    await Promise.all([
+      loadTaskLogs(),
+      loadDocumentChunks(chunkCurrentPage.value, { resetCollapse: false }),
+    ])
+  } catch (error) {
+    console.error('刷新构建完成后的产物失败', error)
+  }
 }
 
 function startPlanPolling() {
@@ -2102,8 +1972,13 @@ watch(() => route.params.documentId, async (value, oldValue) => {
   chunkDetailDrawerOpen.value = false
   chunkDetailFocusMode.value = 'chunk'
   await loadAll()
+  applyRouteWorkbenchFocus()
   await nextTick()
 })
+
+watch(() => route.query, async () => {
+  applyRouteWorkbenchFocus()
+}, { deep: true })
 
 watch(documentDetail, (value) => {
   if (!value) {
@@ -2123,6 +1998,7 @@ watch(documentDetail, (value) => {
 
 onMounted(async () => {
   await loadAll()
+  applyRouteWorkbenchFocus()
   await nextTick()
   if (!strategyPlan.value?.planReady && normalizeCode(strategyPlan.value?.parseStatus) !== '4') {
     startPlanPolling()
@@ -2136,2669 +2012,189 @@ onBeforeUnmount(() => {
   }
   clearBuildPolling()
 })
+
+const chunkTableHeads = ['子块', '章节 / 标识', '来源 / 状态', '字符', 'Token', '内容预览']
+const chunkStats = computed(() => [
+  { label: '父块数', value: formatCount(chunkParentCount.value) },
+  { label: '总片段', value: formatCount(chunkTotalCount.value) },
+  { label: '向量可用', value: formatCount(chunkVectorReadyCount.value) },
+  { label: '待处理', value: formatCount(chunkVectorPendingCount.value) },
+  { label: '平均 Token', value: formatCount(chunkAverageTokens.value) }
+])
+function noticeClass(type) {
+  if (type === 'success') return 'bg-[var(--status-success-fg)]/10 text-[var(--status-success-fg)]'
+  if (type === 'warning') return 'bg-[var(--status-waiting-fg)]/10 text-[var(--status-waiting-fg)]'
+  if (type === 'danger') return 'bg-[var(--status-danger-fg)]/10 text-[var(--status-danger-fg)]'
+  return 'bg-primary/[0.08] text-primary'
+}
+// Guidance band stays a neutral surface (no tinted fill, no thick left strip). State is carried
+// by a small leading dot + the existing text pill — colour as a small signal, not a fill.
+function guidanceDotClass(tone) {
+  if (tone === 'success') return 'bg-[var(--status-success-fg)]'
+  if (tone === 'running') return 'bg-[var(--status-running-fg)]'
+  if (tone === 'warning') return 'bg-[var(--status-waiting-fg)]'
+  if (tone === 'danger') return 'bg-destructive'
+  return 'bg-primary'
+}
+
+/*
+ * card 和 stepCard 是两种尺度，不能共用一套底色。
+ *
+ * card 用在构建轨迹的 4 个阶段卡上：一屏里只有 1 个处于 current，面填充是高信号的
+ * "就是这一步"，保留。
+ *
+ * stepCard 用在"先确认策略方案 / 再执行构建索引"这两张大卡上：单张 533x134 约 71000px²，
+ * 满填 --status-*-bg 就是一块大色块——面积大、底色浅，噪音高信号低。这里改成中性底 +
+ * 带色描边 + 一档阴影：颜色只留在 1px 描边、编号片（满彩度实心）和按钮上，"轮到你了"
+ * 由抬升（阴影）而不是由更多颜色表达。已完成/未开始不抬升，不跟当前步抢注意力。
+ */
+const WORKFLOW_TONE_CLASSES = Object.freeze({
+  default: {
+    card: 'border-border bg-secondary',
+    stepCard: 'border-border bg-secondary',
+    marker: 'bg-foreground/[0.08] text-muted-foreground',
+    button: 'border-border bg-background text-muted-foreground hover:bg-muted',
+    connector: 'text-muted-foreground'
+  },
+  primary: {
+    card: 'border-primary/20 bg-primary/[0.04]',
+    stepCard: 'border-primary/30 bg-card shadow-[var(--shadow-glass)]',
+    marker: 'bg-primary text-primary-foreground',
+    button: 'border-primary/25 bg-primary/[0.08] text-primary hover:bg-primary/[0.12]',
+    connector: 'text-primary'
+  },
+  waiting: {
+    card: 'border-border bg-secondary',
+    stepCard: 'border-border bg-secondary',
+    marker: 'bg-[var(--status-waiting-fg)] text-white',
+    button: 'border-[var(--status-waiting-border)] bg-[var(--status-waiting-bg)] text-[var(--status-waiting-fg)] hover:bg-[var(--status-waiting-bg)]',
+    connector: 'text-[var(--status-waiting-fg)]'
+  },
+  running: {
+    card: 'border-[var(--status-running-border)] bg-[var(--status-running-bg)]',
+    stepCard: 'border-[var(--status-running-border)] bg-card shadow-[var(--shadow-glass)]',
+    marker: 'bg-[var(--status-running-fg)] text-white',
+    button: 'border-[var(--status-running-border)] bg-[var(--status-running-bg)] text-[var(--status-running-fg)] hover:border-[var(--status-running-fg)]/40 hover:bg-[var(--status-running-bg)]',
+    connector: 'text-[var(--status-running-fg)]'
+  },
+  success: {
+    card: 'border-border bg-card',
+    stepCard: 'border-border bg-card',
+    marker: 'bg-[var(--status-success-fg)] text-white',
+    button: 'border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success-fg)] hover:border-[var(--status-success-fg)]/40 hover:bg-[var(--status-success-bg)]',
+    connector: 'text-[var(--status-success-fg)]'
+  },
+  danger: {
+    card: 'border-[var(--status-danger-border)] bg-[var(--status-danger-bg)]',
+    stepCard: 'border-[var(--status-danger-border)] bg-card shadow-[var(--shadow-glass)]',
+    marker: 'bg-[var(--status-danger-fg)] text-white',
+    button: 'border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)] hover:bg-[var(--status-danger-bg)]',
+    connector: 'text-[var(--status-danger-fg)]'
+  }
+})
+
+function workflowStepVisual(kind, state) {
+  return WORKFLOW_TONE_CLASSES[resolveWorkflowStepTone(kind, state)] || WORKFLOW_TONE_CLASSES.default
+}
+
+function buildProgressVisual(status) {
+  return workflowStepVisual('build', status)
+}
+function strategyStatusStepClass(status) {
+  if (status === 'done' || status === 'completed') return 'border-[var(--status-success-fg)]/20 bg-[var(--status-success-fg)]/[0.04]'
+  if (status === 'current') return 'border-primary/20 bg-primary/[0.04]'
+  if (status === 'failed') return 'border-destructive/20 bg-destructive/[0.04]'
+  return 'border-border bg-secondary'
+}
+function chunkChipClass(code) {
+  if (code === '2') return 'bg-[var(--status-success-fg)]/10 text-[var(--status-success-fg)]'
+  if (code === '3') return 'bg-destructive/10 text-destructive'
+  return 'bg-foreground/[0.06] text-muted-foreground'
+}
+function chunkStatusIcon(code) {
+  if (code === '3') return ExclamationCircleIcon
+  return ClockIcon
+}
 </script>
 
 <style scoped>
-.document-detail-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* Pipeline classification tone: one scope per lane sets local vars from the single
+   backing palette in tailwind.css. Children consume var(--pl-*), never raw blue/amber. */
+.chunk-group-tone {
+  --pl-bg: var(--chunk-group-bg);
+  --pl-fg: var(--chunk-group-fg);
+  --pl-border: var(--chunk-group-border);
+  --pl-solid: var(--chunk-group-solid);
 }
-
-.page-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.pipeline-tone-parent {
+  --pl-bg: var(--pipeline-parent-bg);
+  --pl-fg: var(--pipeline-parent-fg);
+  --pl-border: var(--pipeline-parent-border);
+  --pl-solid: var(--pipeline-parent-solid);
 }
-
-.panel-card {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 20px;
+.pipeline-tone-child {
+  --pl-bg: var(--pipeline-child-bg);
+  --pl-fg: var(--pipeline-child-fg);
+  --pl-border: var(--pipeline-child-border);
+  --pl-solid: var(--pipeline-child-solid);
 }
-
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-
-.page-top-main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.page-top-actions {
-  display: flex;
-  align-items: center;
-}
-
-.page-top-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  color: var(--color-muted-strong);
-  font-size: 13px;
-}
-
-.page-top-breadcrumb strong {
-  color: var(--color-text-strong);
-}
-
-.page-top-back {
-  padding: 10px 14px;
-}
-
-.page-top-caption {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.workspace-guidance-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  align-items: start;
-}
-
-.workspace-guidance-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.workspace-guidance-card strong {
-  color: var(--color-text-strong);
-  font-size: 18px;
-  line-height: 1.3;
-}
-
-.workspace-guidance-card p {
-  margin: 0;
-  color: #647082;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.workspace-guidance-kicker {
-  color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workspace-guidance-card-primary {
-  border-color: rgba(178, 31, 196, 0.14);
-  background: rgba(178, 31, 196, 0.04);
-}
-
-.workspace-guidance-card-warning {
-  border-color: rgba(245, 158, 11, 0.2);
-  background: rgba(245, 158, 11, 0.04);
-}
-
-.workspace-guidance-card-danger {
-  border-color: rgba(177, 47, 38, 0.18);
-  background: rgba(177, 47, 38, 0.04);
-}
-
-.workspace-guidance-card-success {
-  border-color: rgba(18, 125, 74, 0.18);
-  background: rgba(18, 125, 74, 0.04);
-}
-
-.workspace-guidance-card-neutral {
-  background: var(--color-surface-soft);
-}
-
-.workspace-shortcut-group {
-  margin-top: auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.workbench-nav {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  display: flex;
-  gap: 6px;
-  padding: 10px 12px;
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  border: 1px solid #e2e8f0;
-  background: #f1f5f9;
-  box-shadow: var(--shadow-sm);
-}
-
-.workbench-nav-item {
-  --nav-accent-rgb: 178, 31, 196;
-  --nav-accent-solid: #b21fc4;
-  --nav-accent-muted: #4f5b6b;
-  min-width: 220px;
-  flex: 1;
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-text);
-  text-align: left;
-}
-
-.workbench-nav-item,
-.strategy-chip,
-.chunk-group-node,
-.sibling-chunk-card,
-.flow-action-button,
-.icon-button,
-.action-button {
-  cursor: pointer;
-}
-
-.workbench-nav-item-overview {
-  --nav-accent-rgb: 140, 22, 141;
-  --nav-accent-solid: #8c168d;
-  --nav-accent-muted: #4f5b6b;
-}
-
-.workbench-nav-item-strategy {
-  --nav-accent-rgb: 10, 109, 122;
-  --nav-accent-solid: #0a6d7a;
-  --nav-accent-muted: #3f6f67;
-}
-
-.workbench-nav-item-execution {
-  --nav-accent-rgb: 245, 158, 11;
-  --nav-accent-solid: #b45309;
-  --nav-accent-muted: #996f26;
-}
-
-.workbench-nav-item-chunk {
-  --nav-accent-rgb: 14, 116, 144;
-  --nav-accent-solid: #0f6f85;
-  --nav-accent-muted: #3f6f7b;
-}
-
-.workbench-nav-item-tasks {
-  --nav-accent-rgb: 71, 85, 105;
-  --nav-accent-solid: #475569;
-  --nav-accent-muted: #5f6e81;
-}
-
-.workbench-nav-item:hover {
-  border-color: rgba(var(--nav-accent-rgb), 0.2);
-  background: rgba(var(--nav-accent-rgb), 0.04);
-}
-
-.workbench-nav-item:focus-visible,
-.strategy-chip:focus-visible,
-.chunk-group-node:focus-visible,
-.sibling-chunk-card:focus-visible,
-.flow-action-button:focus-visible,
-.icon-button:focus-visible,
-.action-button:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 3px rgba(178, 31, 196, 0.16),
-    0 12px 22px rgba(15, 23, 42, 0.12);
-}
-
-.workbench-nav-step {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: rgba(var(--nav-accent-rgb), 0.1);
-  color: rgb(var(--nav-accent-rgb));
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.workbench-nav-copy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.workbench-nav-copy strong {
-  color: var(--color-text-strong);
-  font-size: 13px;
-}
-
-.workbench-nav-copy span {
-  color: var(--color-muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.workbench-nav-item em {
-  padding: 5px 10px;
-  border-radius: 4px;
-  background: rgba(15, 23, 42, 0.06);
-  color: var(--color-muted-strong);
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.workbench-nav-item.active {
-  border-color: rgb(var(--nav-accent-rgb));
-  background: rgba(var(--nav-accent-rgb), 0.2);
-  border-bottom: 3px solid rgb(var(--nav-accent-rgb));
-}
-
-.workbench-nav-item.active .workbench-nav-step,
-.workbench-nav-item.active em {
-  background: rgba(var(--nav-accent-rgb), 0.18);
-  color: var(--nav-accent-solid);
-}
-
-.workbench-nav-item.active .workbench-nav-copy strong {
-  color: var(--nav-accent-solid);
-}
-
-.workbench-nav-item.active .workbench-nav-copy span {
-  color: var(--nav-accent-muted);
-}
-
-.workbench-section {
-  --section-accent-rgb: 178, 31, 196;
-  --section-accent-solid: #b21fc4;
-  --section-accent-muted: #4f5b6b;
+/* Parent block -> child chunks: config-page rail hierarchy. The parent head is a
+   standalone bar; the child table hangs off an indented rail with a connector tick. */
+.chunk-rail {
   position: relative;
-  overflow: hidden;
-  padding: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.workbench-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgb(var(--section-accent-rgb));
-}
-
-.workbench-section[data-workbench-section='overview'] {
-  --section-accent-rgb: 140, 22, 141;
-  --section-accent-solid: #8c168d;
-  --section-accent-muted: #4f5b6b;
-}
-
-.workbench-section[data-workbench-section='strategy'] {
-  --section-accent-rgb: 10, 109, 122;
-  --section-accent-solid: #0a6d7a;
-  --section-accent-muted: #3f6f67;
-}
-
-.workbench-section[data-workbench-section='execution'] {
-  --section-accent-rgb: 245, 158, 11;
-  --section-accent-solid: #b45309;
-  --section-accent-muted: #996f26;
-}
-
-.workbench-section[data-workbench-section='chunk'] {
-  --section-accent-rgb: 14, 116, 144;
-  --section-accent-solid: #0f6f85;
-  --section-accent-muted: #3f6f7b;
-}
-
-.workbench-section[data-workbench-section='tasks'] {
-  --section-accent-rgb: 71, 85, 105;
-  --section-accent-solid: #475569;
-  --section-accent-muted: #5f6e81;
-}
-
-.workbench-section-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.workbench-section-heading {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.workbench-section-step-badge {
-  width: fit-content;
-  padding: 7px 12px;
-  border-radius: 4px;
-  background: rgba(var(--section-accent-rgb), 0.12);
-  color: var(--section-accent-solid);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workbench-section-heading h2 {
-  margin: 0;
-  color: #262e3a;
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.25;
-}
-
-.workbench-section-heading p {
-  margin: 0;
-  max-width: 660px;
-  color: #647082;
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.workbench-section-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  border-radius: 4px;
-  background: rgba(var(--section-accent-rgb), 0.1);
-  color: var(--section-accent-solid);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.workbench-section .workspace-guidance-card,
-.workbench-section .workspace-subsection,
-.workbench-section .execution-summary-card,
-.workbench-section .chunk-stat-card,
-.workbench-section .chunk-group-card,
-.workbench-section .chunk-table,
-.workbench-section .build-progress-card,
-.workbench-section .summary-log-item {
-  border-color: var(--color-border);
-  background: #fff;
-  box-shadow: none;
-}
-
-.overview-document-card {
-  margin-top: 18px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 22px 24px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.overview-document-main {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.overview-document-kicker {
-  margin: 0;
-  color: var(--section-accent-solid);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.overview-document-card h3 {
-  margin: 0;
-  color: #262e3a;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.3;
-}
-
-.overview-document-subtitle {
-  margin: 0;
-  color: var(--color-muted-strong);
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.overview-document-side {
-  min-width: 280px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.overview-document-phase {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: rgba(var(--section-accent-rgb), 0.1);
-  color: var(--section-accent-solid);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.overview-guidance-grid {
-  margin-top: 12px;
-}
-
-.overview-routes-card {
-  margin-top: 12px;
-  padding: 16px 18px;
-}
-
-.overview-action-row {
-  margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0.75rem;
+  margin-inline-start: 1.25rem;
+  padding-block: 0.875rem 0.25rem;
+  padding-inline-start: 1.25rem;
+  border-inline-start: 1px solid var(--border-strong);
 }
 
-.overview-action-row .ghost-button {
-  justify-content: center;
-  min-height: 48px;
-  border-color: var(--color-border);
-  background: #fff;
-  color: var(--section-accent-solid);
-  box-shadow: none;
-}
-
-.overview-action-row .ghost-button:hover:not(:disabled) {
-  border-color: rgba(var(--section-accent-rgb), 0.3);
-  background: rgba(var(--section-accent-rgb), 0.04);
-  box-shadow: none;
-}
-
-.workspace-subsection {
-  padding: 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.workspace-subsection-surface {
-  margin-top: 18px;
-}
-
-.workspace-subsection-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.workspace-subsection-header-spread {
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.workspace-subsection-kicker {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workspace-subsection h3 {
-  margin: 8px 0 0;
-  color: var(--color-text-strong);
-  font-size: 26px;
-  font-weight: 800;
-}
-
-.workspace-subsection-copy {
-  margin: 14px 0 0;
-  color: #647082;
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.workspace-subsection-copy-inline {
-  margin: 0;
-  max-width: 520px;
-  text-align: right;
-}
-
-.overview-focus-list {
-  margin-top: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.overview-focus-list span {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 10px;
-  border-radius: 4px;
-  background: rgba(178, 31, 196, 0.08);
-  color: var(--color-primary-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.overview-action-stack {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.execution-summary-grid {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.execution-summary-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.execution-summary-card span {
-  color: var(--color-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.execution-summary-card strong {
-  color: var(--color-text-strong);
-  font-size: 24px;
-  line-height: 1.2;
-}
-
-.execution-summary-card p {
-  margin: 0;
-  color: var(--color-muted-strong);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.task-section-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.detail-header,
-.detail-statuses,
-.build-progress-header,
-.detail-secondary-actions,
-.section-headline,
-.summary-log-head,
-.drawer-log-head,
-.confirm-actions,
-.strategy-chip-top,
-.chunk-head,
-.chunk-title-group,
-.chunk-status-group,
-.chunk-meta,
-.drawer-summary,
-.tracker-footer {
-  display: flex;
-  align-items: center;
-}
-
-.detail-header,
-.build-progress-header,
-.section-headline,
-.chunk-head {
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.section-headline-major {
-  padding: 0 0 14px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.section-headline.section-headline-major h4 {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #262e3a;
-  line-height: 1.08;
-}
-
-.section-headline.section-headline-major span {
-  color: var(--color-muted-strong);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.section-headline-editor {
-  margin-top: 30px;
-}
-
-.pipeline-headline {
-  margin-top: 18px;
-  padding: 6px 0 10px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.section-headline.pipeline-headline h4 {
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1.12;
-}
-
-.section-headline.pipeline-headline span {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.pipeline-headline-parent {
-  border-bottom-color: rgba(178, 31, 196, 0.18);
-}
-
-.section-headline.pipeline-headline-parent h4,
-.section-headline.pipeline-headline-parent span {
-  color: var(--color-primary-strong);
-}
-
-.pipeline-headline-child {
-  border-bottom-color: rgba(10, 109, 122, 0.18);
-}
-
-.section-headline.pipeline-headline-child h4,
-.section-headline.pipeline-headline-child span {
-  color: #127d4a;
-}
-
-.detail-statuses,
-.chunk-title-group,
-.chunk-status-group,
-.chunk-meta,
-.tracker-footer {
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.detail-header h3,
-.section-headline h4,
-.drawer-header h3 {
-  margin: 0;
-  color: var(--color-text-strong);
-}
-
-.detail-header h3 {
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.section-headline h4,
-.drawer-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.detail-subtitle,
-.section-headline span,
-.drawer-subtitle,
-.summary-log-head span {
-  color: var(--color-muted);
-}
-
-.detail-secondary-actions,
-.confirm-actions {
-  gap: 12px;
-}
-
-.meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.meta-item,
-.reason-card,
-.preview-box,
-.selected-flow-board {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-}
-
-.meta-item span,
-.reason-card span,
-.preview-box span,
-.selected-flow-label {
-  display: block;
-  font-size: 12px;
-  color: var(--color-muted);
-}
-
-.meta-item strong {
-  display: block;
-  margin-top: 10px;
-  color: var(--color-text-strong);
-}
-
-.detail-section {
-  padding-top: 4px;
-}
-
-.strategy-status-bar {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.strategy-status-step {
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: #fff;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-
-.strategy-status-index {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.strategy-status-copy strong {
-  display: block;
-  color: var(--color-text-strong);
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.strategy-status-copy span {
-  display: block;
-  margin-top: 6px;
-  color: var(--color-muted);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.strategy-status-step-completed {
-  border-color: rgba(10, 109, 122, 0.16);
-  background: rgba(10, 109, 122, 0.04);
-}
-
-.strategy-status-step-completed .strategy-status-index {
-  background: rgba(10, 109, 122, 0.14);
-  color: #127d4a;
-}
-
-.strategy-status-step-current {
-  border-color: rgba(178, 31, 196, 0.16);
-  background: rgba(178, 31, 196, 0.04);
-}
-
-.strategy-status-step-current .strategy-status-index {
-  background: rgba(178, 31, 196, 0.14);
-  color: var(--color-primary-strong);
-}
-
-.strategy-status-step-failed {
-  border-color: rgba(177, 47, 38, 0.16);
-  background: rgba(177, 47, 38, 0.04);
-}
-
-.strategy-status-step-failed .strategy-status-index {
-  background: rgba(177, 47, 38, 0.14);
-  color: #b12f26;
-}
-
-.strategy-section-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.strategy-intro {
-  margin-top: 18px;
-  padding: 2px 0 24px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.strategy-intro-kicker,
-.strategy-adjust-kicker,
-.strategy-lane-kicker {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.strategy-intro-kicker,
-.strategy-adjust-kicker {
-  color: var(--color-muted);
-}
-
-.strategy-intro-copy,
-.strategy-adjust-description,
-.strategy-lane-description {
-  margin: 10px 0 0;
-  color: #647082;
-  line-height: 1.75;
-  font-size: 14px;
-}
-
-.strategy-flow-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  margin-top: 24px;
-}
-
-.strategy-flow-stack-edit {
-  margin-top: 26px;
-}
-
-.strategy-lane {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.strategy-lane + .strategy-lane {
-  padding-top: 24px;
-  border-top: 1px dashed rgba(17, 24, 39, 0.1);
-}
-
-.strategy-lane-recommended {
-  padding-left: 2px;
-}
-
-.strategy-lane-recommended .timeline-list {
-  margin-top: 10px;
-}
-
-.strategy-lane-recommended .timeline-item {
-  box-shadow: none;
-}
-
-.strategy-lane-header,
-.strategy-adjust-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.strategy-lane-titlebox,
-.strategy-adjust-titlebox {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.strategy-adjust-titlebox h5 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.3;
-}
-
-.strategy-lane-titlebox h5 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.18;
-}
-
-.strategy-lane-parent .strategy-lane-kicker,
-.strategy-lane-parent .strategy-lane-titlebox h5 {
-  color: var(--color-primary-strong);
-}
-
-.strategy-lane-child .strategy-lane-kicker,
-.strategy-lane-child .strategy-lane-titlebox h5 {
-  color: #127d4a;
-}
-
-.strategy-lane-description,
-.strategy-adjust-description {
-  max-width: 420px;
-  text-align: right;
-}
-
-.strategy-adjust-shell {
-  margin-top: 34px;
-  padding: 26px 22px 22px;
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-}
-
-.strategy-adjust-shell .strategy-flow-stack-edit {
-  gap: 32px;
-}
-
-.strategy-lane-edit {
-  padding: 18px 18px 0;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(17, 24, 39, 0.06);
-}
-
-.strategy-lane-edit .selected-flow-board,
-.strategy-lane-edit .strategy-picker,
-.strategy-lane-edit .preview-box {
-  margin-top: 14px;
-}
-
-.strategy-lane-edit + .strategy-lane-edit {
-  border-top: none;
-}
-
-.strategy-adjust-kicker {
-  color: var(--color-text-strong);
-}
-
-.timeline-list,
-.summary-log-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.timeline-item,
-.summary-log-item {
-  display: flex;
-  gap: 14px;
-  padding: 16px 18px;
-  border-radius: var(--radius-md);
-  background: #fff;
-  border: 1px solid var(--color-border);
-}
-
-.timeline-index {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-md);
-  background: rgba(178, 31, 196, 0.1);
-  color: var(--color-primary-strong);
-  font-weight: 800;
-}
-
-.timeline-main strong,
-.summary-log-head strong,
-.chunk-title-group strong,
-.drawer-log-head strong {
-  color: var(--color-text-strong);
-}
-
-.timeline-main p,
-.summary-log-item p,
-.chunk-body {
-  margin: 8px 0 0;
-  color: #647082;
-  line-height: 1.7;
-}
-
-.chunk-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 10px;
-  border-radius: 4px;
-  background: rgba(17, 24, 39, 0.08);
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.chunk-chip-1 { background: rgba(17, 24, 39, 0.08); color: var(--color-text); }
-.chunk-chip-2 { background: rgba(178, 31, 196, 0.1); color: var(--color-primary-strong); }
-.chunk-chip-3 { background: rgba(18, 125, 74, 0.1); color: #127d4a; }
-.chunk-chip-4 { background: rgba(177, 47, 38, 0.1); color: #b12f26; }
-
-.chunk-body {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.chunk-table-panel {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.chunk-pagination-bar {
-  margin-top: 4px;
-  padding-top: 18px;
-  border-top: 1px solid var(--color-border);
-}
-
-.pagination-status {
-  text-align: center;
-}
-
-.pagination-status strong {
-  display: block;
-  color: var(--color-text-strong);
-}
-
-.pagination-status span {
-  display: block;
-  margin-top: 6px;
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.page-size-control {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: var(--color-muted-strong);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.page-size-control span {
-  margin: 0;
-  color: inherit;
-  font-size: inherit;
-}
-
-.page-size-select {
-  min-width: 92px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  background: #fff;
-  color: var(--color-text-strong);
-  font-size: 13px;
-  font-weight: 600;
-  outline: none;
-}
-
-.page-size-select:focus {
-  border-color: rgba(178, 31, 196, 0.28);
-  box-shadow: 0 0 0 4px rgba(178, 31, 196, 0.08);
-}
-
-.chunk-toolbar {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.chunk-section-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.chunk-view-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
-}
-
-.chunk-view-button {
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  color: var(--color-muted-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chunk-view-button.active {
-  background: #fff;
-  color: var(--color-primary-strong);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-}
-
-.chunk-stat-card {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.chunk-stat-card span {
-  display: block;
-  font-size: 11px;
-  color: var(--color-muted);
-}
-
-.chunk-stat-card strong {
-  display: block;
-  margin-top: 10px;
-  color: var(--color-text-strong);
-  font-size: 24px;
-  line-height: 1.15;
-}
-
-.chunk-table {
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.chunk-group-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.chunk-group-card {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-  overflow: hidden;
-}
-
-.chunk-group-card.collapsed {
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
-}
-
-.chunk-group-head-main {
-  min-width: 0;
-}
-
-.chunk-group-head-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-.chunk-group-head {
-  padding: 16px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
-}
-
-.chunk-group-head strong {
-  color: var(--color-text-strong);
-  font-size: 16px;
-}
-
-.chunk-group-head p {
-  margin: 8px 0 0;
-  color: var(--color-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.chunk-group-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.chunk-group-meta span {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: rgba(178, 31, 196, 0.08);
-  color: var(--color-primary-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chunk-group-detail-button {
-  padding: 8px 12px;
-}
-
-.chunk-group-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.chunk-group-toggle-button {
-  padding: 8px 12px;
-}
-
-.chunk-group-track {
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.chunk-group-node {
-  min-width: 96px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  flex: none;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-}
-
-.chunk-group-node strong {
-  color: var(--color-text-strong);
-}
-
-.chunk-group-node span {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chunk-group-node:hover {
-  border-color: rgba(var(--section-accent-rgb), 0.24);
-  background: rgba(var(--section-accent-rgb), 0.04);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.chunk-group-table .chunk-row:last-child {
-  border-bottom: none;
-}
-
-.chunk-table-head,
-.chunk-row {
-  display: grid;
-  grid-template-columns: 112px minmax(180px, 1.4fr) 180px 84px 96px 96px minmax(260px, 2.2fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.chunk-table-head {
-  padding: 14px 16px;
-  background: var(--color-surface-soft);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.chunk-table-head span {
-  font-size: 11px;
-  color: var(--color-muted);
-  font-weight: 700;
-}
-
-.chunk-row {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.chunk-row-clickable {
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.chunk-row-clickable:hover {
-  background: rgba(var(--section-accent-rgb), 0.04);
-  box-shadow: inset 4px 0 0 rgb(var(--section-accent-rgb));
-}
-
-.chunk-row:last-child { border-bottom: none; }
-
-.chunk-cell {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.chunk-cell strong { color: var(--color-text-strong); line-height: 1.35; }
-.chunk-cell span { color: #647082; font-size: 12px; line-height: 1.5; word-break: break-word; }
-.chunk-cell-index strong { font-size: 20px; }
-.chunk-relation-hint {
-  color: var(--color-primary-strong) !important;
-  font-size: 12px !important;
-  font-weight: 700;
-}
-.chunk-cell-status { gap: 8px; }
-.chunk-cell-status .chunk-chip { width: fit-content; }
-
-.chunk-cell-content .chunk-body {
-  display: -webkit-box;
-  overflow: hidden;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-}
-
-.chunk-detail-drawer {
-  width: min(720px, 100vw);
-}
-
-.chunk-detail-section {
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
-}
-
-.chunk-detail-section-current {
-  border-color: rgba(178, 31, 196, 0.18);
-  background: rgba(178, 31, 196, 0.04);
-}
-
-.chunk-detail-section-parent {
-  border-color: rgba(10, 109, 122, 0.18);
-  background: rgba(10, 109, 122, 0.04);
-}
-
-.chunk-detail-section-focused {
-  box-shadow: 0 0 0 3px rgba(10, 109, 122, 0.12);
-}
-
-.chunk-detail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.chunk-detail-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.chunk-detail-head h4 {
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.chunk-detail-head span,
-.chunk-detail-meta span {
-  color: var(--color-muted);
-  font-size: 12px;
-}
-
-.chunk-kind-badge {
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.chunk-kind-badge-child {
-  background: rgba(178, 31, 196, 0.1);
-  color: var(--color-primary-strong);
-}
-
-.chunk-kind-badge-parent {
-  background: rgba(10, 109, 122, 0.12);
-  color: #127d4a;
-}
-
-.chunk-detail-meta {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.chunk-relation-legend {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.chunk-relation-legend span {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: rgba(178, 31, 196, 0.08);
-  color: var(--color-primary-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chunk-relation-note {
-  margin: 12px 0 0;
-  color: var(--color-muted-strong);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.chunk-relation-track {
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  background: #fff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-}
-
-.chunk-relation-node {
-  min-width: 86px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex: none;
-}
-
-.chunk-relation-node.active {
-  border-color: rgba(178, 31, 196, 0.36);
-  background: rgba(178, 31, 196, 0.08);
-}
-
-.chunk-relation-node strong {
-  color: var(--color-text-strong);
-  font-size: 15px;
-}
-
-.chunk-relation-node span {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.chunk-relation-line {
-  height: 2px;
-  min-width: 28px;
-  background: rgba(17, 24, 39, 0.12);
-  border-radius: 4px;
-  flex: none;
-}
-
-.chunk-relation-line.active {
-  background: rgba(178, 31, 196, 0.42);
-}
-
-.summary-chip-child {
-  border-color: rgba(178, 31, 196, 0.16);
-  background: rgba(178, 31, 196, 0.06);
-}
-
-.summary-chip-parent {
-  border-color: rgba(10, 109, 122, 0.16);
-  background: rgba(10, 109, 122, 0.06);
-}
-
-.chunk-detail-text {
-  margin: 14px 0 0;
-  padding: 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  background: #fff;
-  color: var(--color-text);
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.7;
-  font-size: 13px;
-  max-height: 280px;
-  overflow: auto;
-}
-
-.chunk-detail-section-current .chunk-detail-text {
-  border-color: rgba(178, 31, 196, 0.12);
-}
-
-.chunk-detail-section-parent .chunk-detail-text {
-  border-color: rgba(10, 109, 122, 0.12);
-}
-
-.parent-block-text {
-  max-height: 360px;
-}
-
-.sibling-chunk-list {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sibling-chunk-card {
-  width: 100%;
-  text-align: left;
-  padding: 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-}
-
-.sibling-chunk-card.active {
-  border-color: rgba(178, 31, 196, 0.36);
-  background: rgba(178, 31, 196, 0.04);
-}
-
-.sibling-chunk-card:hover {
-  border-color: rgba(178, 31, 196, 0.24);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.sibling-chunk-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.sibling-chunk-head strong {
-  color: var(--color-text-strong);
-}
-
-.sibling-chunk-card p,
-.sibling-chunk-card span {
-  margin: 0;
-  color: #647082;
-  font-size: 12px;
-  line-height: 1.6;
-  word-break: break-word;
-}
-
-.sibling-chunk-card span {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.selected-flow-board { margin-top: 14px; }
-.selected-flow-board {
-  border: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.selected-flow-board-parent {
-  background: rgba(178, 31, 196, 0.03);
-}
-
-.selected-flow-board-child {
-  background: rgba(10, 109, 122, 0.03);
-}
-
-.timeline-list-parent .timeline-item {
-  border-color: rgba(178, 31, 196, 0.12);
-  background: rgba(178, 31, 196, 0.03);
-}
-
-.timeline-list-parent .timeline-index {
-  background: rgba(178, 31, 196, 0.12);
-  color: var(--color-primary-strong);
-}
-
-.timeline-list-child .timeline-item {
-  border-color: rgba(10, 109, 122, 0.12);
-  background: rgba(10, 109, 122, 0.03);
-}
-
-.timeline-list-child .timeline-index {
-  background: rgba(10, 109, 122, 0.12);
-  color: #127d4a;
-}
-
-.selected-flow-label {
-  font-family: var(--font-display);
-  font-size: 24px !important;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: none !important;
-}
-
-.selected-flow-label-parent {
-  color: var(--color-primary-strong) !important;
-}
-
-.selected-flow-label-child {
-  color: #127d4a !important;
-}
-
-.sequence-board {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sequence-card-placeholder { min-height: 1px; }
-
-.selected-flow-sequence,
-.build-stage-board { margin-top: 14px; }
-
-.sequence-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
-  gap: 14px;
-  align-items: center;
-}
-
-.sequence-inline-arrow,
-.sequence-down-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  font-size: 24px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.sequence-inline-arrow-empty { visibility: hidden; }
-
-.sequence-down-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
-  min-height: 44px;
-  align-items: center;
-}
-
-.sequence-down-row-left .sequence-down-arrow { grid-column: 1; }
-.sequence-down-row-right .sequence-down-arrow { grid-column: 3; }
-
-.selected-flow-card {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: #fff;
-}
-
-.selected-flow-board-parent .selected-flow-card {
-  border-color: rgba(178, 31, 196, 0.14);
-  box-shadow: none;
-}
-
-.selected-flow-board-parent .selected-flow-order {
-  background: #b21fc4;
-}
-
-.selected-flow-board-child .selected-flow-card {
-  border-color: rgba(10, 109, 122, 0.14);
-  box-shadow: none;
-}
-
-.selected-flow-board-child .selected-flow-order {
-  background: #0a6d7a;
-}
-
-.selected-flow-order {
-  width: 56px;
-  height: 56px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.selected-flow-content strong { display: block; color: var(--color-text-strong); }
-.selected-flow-content span { display: block; margin-top: 6px; color: #647082; font-size: 12px; line-height: 1.55; }
-
-.selected-flow-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.flow-action-button {
-  min-width: 58px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--color-text-strong);
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-}
-
-.flow-action-button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.flow-action-button:hover:not(:disabled) {
-  border-color: rgba(178, 31, 196, 0.2);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.strategy-picker {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.strategy-picker-parent .strategy-chip.active {
-  border-color: rgba(178, 31, 196, 0.4);
-  background: rgba(178, 31, 196, 0.08);
-  box-shadow: none;
-}
-
-.strategy-picker-parent .strategy-chip.active .strategy-chip-state {
-  background: rgba(178, 31, 196, 0.16);
-  color: var(--color-primary-strong);
-}
-
-.strategy-picker-parent .strategy-chip-check {
-  color: var(--color-primary-strong);
-}
-
-.strategy-picker-child .strategy-chip.active {
-  border-color: rgba(10, 109, 122, 0.4);
-  background: rgba(10, 109, 122, 0.08);
-  box-shadow: none;
-}
-
-.strategy-picker-child .strategy-chip.active .strategy-chip-state {
-  background: rgba(10, 109, 122, 0.16);
-  color: #127d4a;
-}
-
-.strategy-picker-child .strategy-chip-check {
-  color: #127d4a;
-}
-
-.preview-box-parent {
-  border: 1px solid rgba(178, 31, 196, 0.14);
-  background: rgba(178, 31, 196, 0.03);
-}
-
-.preview-box-child {
-  border: 1px solid rgba(10, 109, 122, 0.14);
-  background: rgba(10, 109, 122, 0.03);
-}
-
-.preview-box .preview-box-title {
-  font-family: var(--font-display);
-  font-size: 22px !important;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: none !important;
-}
-
-.preview-box-title-parent {
-  color: var(--color-primary-strong) !important;
-}
-
-.preview-box-title-child {
-  color: #127d4a !important;
-}
-
-.strategy-chip {
-  text-align: left;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  background: #fff;
-  box-shadow: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-}
-
-.strategy-chip.active {
-  border-color: rgba(178, 31, 196, 0.5);
-  background: rgba(178, 31, 196, 0.06);
-}
-
-.strategy-chip:hover {
-  border-color: rgba(178, 31, 196, 0.22);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.strategy-chip.active .strategy-chip-state {
-  background: rgba(178, 31, 196, 0.16);
-  color: #680f67;
-}
-
-.strategy-chip strong { display: block; color: var(--color-text-strong); font-size: 15px; }
-.strategy-chip span { display: block; margin-top: 6px; color: #647082; font-size: 12px; line-height: 1.5; }
-
-.strategy-chip-state {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.strategy-chip-check { width: 22px; height: 22px; color: var(--color-primary-strong); }
-.strategy-chip-top { justify-content: space-between; }
-
-.preview-box {
-  margin-top: 16px;
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
-}
-
-.preview-box > span { font-weight: 700; color: var(--color-primary-strong); font-size: 14px; }
-
-.reason-card p,
-.preview-empty,
-.selected-flow-empty {
-  margin: 10px 0 0;
-  color: var(--color-muted-strong);
-  line-height: 1.7;
-}
-
-.preview-flow {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.preview-tag {
-  padding: 7px 14px;
-  border-radius: 4px;
-  background: rgba(10, 109, 122, 0.08);
-  border: 1px solid rgba(10, 109, 122, 0.18);
-  color: #127d4a;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.flow-arrow {
+.chunk-rail-item {
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 52px;
-  margin: 4px 0;
 }
 
-.flow-arrow::before {
-  content: '';
+.chunk-rail-item::before {
   position: absolute;
-  left: 50%;
-  top: 2px;
-  bottom: 2px;
-  width: 2px;
-  transform: translateX(-50%);
-  background: rgba(178, 31, 196, 0.2);
-}
-
-.preview-arrow,
-.back-icon,
-.drawer-icon { width: 18px; height: 18px; color: var(--color-primary-strong); }
-
-.flow-arrow-icon {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary-strong);
-  background: transparent;
-  font-size: 24px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.confirm-actions {
-  margin-top: 16px;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.adjust-input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  background: #fff;
-  outline: none;
-  color: var(--color-text);
-}
-
-.adjust-input:focus {
-  border-color: rgba(178, 31, 196, 0.28);
-  box-shadow: 0 0 0 4px rgba(178, 31, 196, 0.08);
-}
-
-.strategy-submit-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.action-stage-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.action-stage-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.action-stage-index {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text-strong);
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.action-stage-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.action-stage-card strong { color: var(--color-text-strong); font-size: 18px; }
-.action-stage-card p { margin: 0; color: var(--color-muted-strong); line-height: 1.7; }
-
-.action-stage-ready {
-  border-color: rgba(178, 31, 196, 0.18);
-  box-shadow: var(--shadow-md);
-}
-
-.action-stage-ready .action-stage-index,
-.action-stage-ready .action-stage-badge {
-  background: rgba(178, 31, 196, 0.12);
-  color: var(--color-primary-strong);
-}
-
-.action-stage-current {
-  border-color: rgba(17, 24, 39, 0.1);
-  background: var(--color-text-strong);
-  box-shadow: var(--shadow-md);
-}
-
-.action-stage-current .action-stage-index,
-.action-stage-current .action-stage-badge {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-
-.action-stage-current strong,
-.action-stage-current p { color: #fff; }
-
-.action-stage-completed {
-  border-color: rgba(18, 125, 74, 0.18);
-  background: rgba(18, 125, 74, 0.04);
-}
-
-.action-stage-completed .action-stage-index,
-.action-stage-completed .action-stage-badge {
-  background: rgba(18, 125, 74, 0.14);
-  color: #127d4a;
-}
-
-.action-stage-locked {
-  border-style: dashed;
-  border-color: rgba(17, 24, 39, 0.14);
-  background: var(--color-surface-soft);
-}
-
-.action-stage-locked .action-stage-badge {
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-muted-strong);
-}
-
-.action-stage-card .action-button { width: 100%; justify-content: center; }
-
-.action-button,
-.primary-button,
-.ghost-button {
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 12px 16px;
-  font-weight: 700;
-}
-
-.action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 56px;
-  color: #fff;
-  font-weight: 700;
-  border: 1px solid transparent;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
-  letter-spacing: 0.01em;
-}
-
-.action-button-confirm {
-  border-color: rgba(178, 31, 196, 0.24);
-  background: #b21fc4;
-  box-shadow: var(--shadow-sm);
-}
-
-.action-button-build {
-  border-color: rgba(15, 23, 42, 0.22);
-  background: #0f172a;
-  box-shadow: var(--shadow-sm);
-}
-
-.action-button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.action-button:hover:not(:disabled) {
-  transform: translateY(-1px) scale(1.01);
-}
-
-.action-button-confirm:hover:not(:disabled) {
-  box-shadow: var(--shadow-md);
-}
-
-.action-button-build:hover:not(:disabled) {
-  box-shadow: var(--shadow-md);
-}
-
-.action-button-icon {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  opacity: 0.92;
-}
-
-.action-stage-completed .action-button-confirm {
-  background: #127d4a;
-}
-
-.action-stage-completed .action-button-confirm:disabled,
-.action-stage-locked .action-button-build:disabled { opacity: 0.88; }
-
-.action-stage-locked .action-button-build {
-  border-color: var(--color-border);
-  background: #fff;
-  color: var(--color-text);
-  box-shadow: none;
-}
-
-.ghost-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  cursor: pointer;
-  color: var(--color-primary-strong);
-  background: #fff;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.ghost-button:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-soft);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.ghost-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(178, 31, 196, 0.16);
-}
-
-.ghost-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-  box-shadow: none;
-  transform: none;
-}
-
-.inline-notice {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-}
-
-.inline-notice-danger {
-  background: rgba(177, 47, 38, 0.08);
-  border: 1px solid rgba(177, 47, 38, 0.12);
-  color: #b12f26;
-}
-
-.empty-block {
-  min-height: 260px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: var(--color-muted);
-  border-radius: var(--radius-md);
-  border: 1px dashed rgba(17, 24, 39, 0.16);
-  background: var(--color-surface-soft);
-}
-
-.compact-empty { min-height: 140px; margin-top: 14px; }
-
-.build-progress-card {
-  padding: 18px 20px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-}
-
-.build-progress-card-inline { margin-top: 18px; scroll-margin-top: 24px; }
-
-.build-pulse {
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: rgba(178, 31, 196, 0.1);
-  color: var(--color-primary-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.build-pulse-static { background: rgba(17, 24, 39, 0.08); color: var(--color-text); }
-
-.build-progress-text { margin: 10px 0 0; color: var(--color-muted); line-height: 1.7; }
-
-.stage-card {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 14px;
-  align-items: center;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: #fff;
-}
-
-.stage-order {
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 900;
-  background: rgba(17, 24, 39, 0.08);
-  color: var(--color-text);
-}
-
-.stage-order > span { display: inline-flex; align-items: center; justify-content: center; }
-.stage-body strong { display: block; color: var(--color-text-strong); }
-.stage-body span { display: block; margin-top: 8px; color: #647082; font-size: 12px; line-height: 1.55; }
-
-.stage-body em {
-  display: inline-flex;
-  margin-top: 10px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.stage-current {
-  border-color: transparent;
-  background: var(--color-text-strong);
-  box-shadow: var(--shadow-md);
-}
-
-.stage-current .stage-order,
-.stage-current .stage-body strong,
-.stage-current .stage-body span,
-.stage-current .stage-body em { color: #fff; background: transparent; }
-
-.stage-current .stage-order .stage-spinner { border-color: rgba(255, 255, 255, 0.32); border-top-color: #fff; }
-
-.stage-completed .stage-order,
-.stage-completed .stage-body em { background: rgba(18, 125, 74, 0.1); color: #127d4a; }
-
-.stage-failed { border-color: rgba(177, 47, 38, 0.14); background: rgba(255, 247, 237, 0.96); }
-.stage-failed .stage-order,
-.stage-failed .stage-body em { background: rgba(177, 47, 38, 0.1); color: #b12f26; }
-
-.tracker-footer span {
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.summary-log-button { align-self: flex-start; }
-
-.stage-spinner,
-.build-overlay-spinner {
-  border-radius: 50%;
-  animation: spin 0.86s linear infinite;
-}
-
-.stage-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid rgba(17, 24, 39, 0.22);
-  border-top-color: currentColor;
-}
-
-.build-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 28;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(10, 22, 35, 0.55);
-}
-
-.build-overlay-card {
-  width: min(760px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 26px;
-  border-radius: var(--radius-lg);
-  background: #111827;
-  box-shadow: 0 28px 54px rgba(10, 22, 35, 0.34);
-  color: #fff;
-}
-
-.build-overlay-head {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-
-.build-overlay-head h3 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.2; }
-
-.build-overlay-spinner {
-  width: 56px;
-  height: 56px;
-  border: 4px solid rgba(255, 255, 255, 0.22);
-  border-top-color: #fff;
-}
-
-.build-overlay-text,
-.build-overlay-tip { margin: 8px 0 0; color: rgba(255, 255, 255, 0.78); line-height: 1.7; }
-
-.build-overlay-task-meta { display: flex; gap: 10px; flex-wrap: wrap; }
-
-.build-overlay-task-meta span {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.94);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.build-overlay-stage-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.build-overlay-stage {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.build-overlay-stage-icon {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.build-overlay-stage-copy strong { display: block; color: #fff; }
-.build-overlay-stage-copy span { display: block; margin-top: 6px; color: rgba(255, 255, 255, 0.74); font-size: 13px; }
-
-.build-overlay-stage-current { border-color: rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.14); }
-.build-overlay-stage-current .build-overlay-stage-icon { background: rgba(255, 255, 255, 0.18); }
-.build-overlay-stage-current .stage-spinner { border-color: rgba(255, 255, 255, 0.32); border-top-color: #fff; }
-.build-overlay-stage-completed .build-overlay-stage-icon { background: rgba(94, 234, 212, 0.16); color: #8ff8df; }
-.build-overlay-stage-failed .build-overlay-stage-icon { background: rgba(248, 113, 113, 0.16); color: #fecaca; }
-
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 22, 35, 0.42);
-  z-index: 18;
-}
-
-.log-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(560px, 100vw);
-  z-index: 19;
-  border: none;
-  border-left: 1px solid var(--color-border);
-  border-radius: 0;
-  background: #fff;
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-}
-
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: start;
-}
-
-.icon-button {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
-}
-
-.icon-button:hover {
-  border-color: rgba(178, 31, 196, 0.2);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.summary-chip {
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.drawer-empty {
-  margin-top: 20px;
-  min-height: 180px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: #6e849c;
-}
-
-.drawer-timeline {
-  margin-top: 20px;
-  padding-right: 6px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.drawer-log-item {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 12px;
-}
-
-.drawer-log-node { position: relative; width: 18px; }
-
-.drawer-log-node::before {
+  top: 1.625rem;
+  right: 100%;
+  width: 1.25rem;
+  height: 1px;
+  background: var(--border-strong);
   content: '';
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(178, 31, 196, 0.12);
 }
 
-.drawer-log-node::after {
-  content: '';
-  position: absolute;
-  top: 18px;
-  left: 8px;
-  bottom: -18px;
-  width: 2px;
-  background: rgba(178, 31, 196, 0.15);
-}
-
-.drawer-log-item:last-child .drawer-log-node::after { display: none; }
-
-.drawer-log-body {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border);
-}
-
-.drawer-log-body p { margin: 10px 0 0; }
-
-.drawer-log-detail {
-  margin: 12px 0 0;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  background: #0f1724;
-  color: #dbe5f5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.drawer-fade-enter-active,
-.drawer-fade-leave-active { transition: opacity 0.22s ease; }
-.drawer-fade-enter-from,
-.drawer-fade-leave-to { opacity: 0; }
-
-.drawer-slide-enter-active,
-.drawer-slide-leave-active { transition: transform 0.26s ease, opacity 0.26s ease; }
-.drawer-slide-enter-from,
-.drawer-slide-leave-to { opacity: 0; transform: translateX(24px); }
-
-.build-mask-fade-enter-active,
-.build-mask-fade-leave-active { transition: opacity 0.22s ease; }
-.build-mask-fade-enter-from,
-.build-mask-fade-leave-to { opacity: 0; }
-
-.page-notice {
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@media (max-width: 960px) {
-  .strategy-status-bar {
-    grid-template-columns: 1fr;
+@media (min-width: 40rem) {
+  .chunk-rail {
+    margin-inline-start: 1.75rem;
+    padding-inline-start: 1.5rem;
   }
 
-  .page-top,
-  .overview-document-card,
-  .overview-document-side,
-  .build-progress-header,
-  .workbench-section-head,
-  .strategy-lane-header,
-  .strategy-adjust-header,
-  .task-section-actions,
-  .confirm-actions,
-  .drawer-log-head,
-  .tracker-footer,
-  .chunk-head {
-    flex-direction: column;
-    align-items: stretch;
+  .chunk-rail-item::before {
+    width: 1.5rem;
   }
+}
 
-  .workspace-guidance-grid,
-  .meta-grid,
-  .execution-summary-grid,
-  .strategy-picker { grid-template-columns: 1fr; }
-  .workspace-shortcut-group { grid-template-columns: 1fr; }
-  .overview-action-row { grid-template-columns: 1fr; }
-  .workspace-subsection-copy-inline { text-align: left; }
-  .overview-document-card h3 { font-size: 20px; }
-  .workbench-section-heading h2 { font-size: 22px; }
-  .workspace-subsection h3 { font-size: 20px; }
-  .strategy-adjust-titlebox h5 { font-size: 18px; }
-  .strategy-lane-titlebox h5 { font-size: 20px; }
-  .chunk-toolbar { grid-template-columns: 1fr 1fr; }
-  .pagination-bar { flex-direction: column; }
-  .sequence-row { grid-template-columns: 1fr; }
-  .selected-flow-card { grid-template-columns: 56px minmax(0, 1fr); }
-  .selected-flow-actions { grid-column: span 2; flex-direction: row; }
-  .sequence-inline-arrow,
-  .sequence-down-row { justify-content: center; }
-  .sequence-down-row { grid-template-columns: 1fr; }
-  .sequence-down-row-left .sequence-down-arrow,
-  .sequence-down-row-right .sequence-down-arrow { grid-column: 1; }
-  .strategy-submit-actions,
-  .build-overlay-stage-list { grid-template-columns: 1fr; }
-  .chunk-table-head { display: none; }
-  .chunk-row { grid-template-columns: 1fr 1fr; }
-  .chunk-cell { padding-top: 2px; }
-  .chunk-cell::before { content: attr(data-label); font-size: 11px; color: var(--color-muted); }
-  .chunk-cell-content { grid-column: 1 / -1; }
-  .build-overlay { padding: 16px; }
-  .build-overlay-card { padding: 20px; }
-  .build-overlay-head { grid-template-columns: 1fr; }
+/*
+ * 步骤行故意不铺 --pl-bg 面填充。填充面积随策略条数线性增长（两步就占泳道 35%，
+ * 四步过半），而底色为了压住正文必须够浅，于是面积大、每像素信号弱，读成"整块是彩色的"。
+ * 分类身份改由三个小而满彩度的元素承担：顶部 父块/子块 标签片、每行的实心编号圆
+ * （--pl-solid）、推荐 pill 的描边。编号圆沿列纵向重复，两三个就足够让"左品红右琥珀"
+ * 成立——这也是父块彩度敢拉到子块 1.7 倍的前提：小面积才吃得住高彩度。
+ * 不要"恢复"成 color-mix 面填充。
+ */
+.pipeline-lane-surface { background: var(--card); }
+.pipeline-step-line { background: color-mix(in oklab, var(--pl-border) 70%, var(--pl-bg)); }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.build-mask-fade-enter-active, .build-mask-fade-leave-active { transition: opacity 0.2s ease; }
+.build-mask-fade-enter-from, .build-mask-fade-leave-to { opacity: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.stage-spinner, .build-overlay-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.build-overlay-spinner { width: 28px; height: 28px; border-width: 3px; color: var(--status-running-fg); }
+@media (prefers-reduced-motion: reduce) {
+  .stage-spinner, .build-overlay-spinner { animation: none; }
+  .modal-enter-active, .modal-leave-active,
+  .build-mask-fade-enter-active, .build-mask-fade-leave-active { transition: none; }
 }
 </style>

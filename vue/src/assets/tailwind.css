@@ -1,0 +1,482 @@
+@import "tw-animate-css";
+@import "shadcn-vue/tailwind.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Production design tokens.
+ * This file is the only backing-value producer. Components should consume
+ * semantic tokens, while the raw ramps remain here for contrast and themes.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-running: var(--running);
+  --color-code: var(--code);
+  --color-code-foreground: var(--code-foreground);
+  --color-selection: var(--selection-bg);
+  --color-chart-series-strong: var(--chart-series-strong);
+  --color-chart-series-mid: var(--chart-series-mid);
+  --color-citation: var(--citation-fg);
+  --color-overlay: var(--overlay);
+  --color-admin-bg: var(--admin-bg);
+  --color-admin-border: var(--admin-border);
+  --color-glass-panel: var(--glass-panel);
+  --color-glass-card: var(--glass-card);
+  --color-glass-raised: var(--glass-raised);
+  --color-glass-border: var(--glass-border);
+  --color-glass-highlight: var(--glass-highlight);
+  --color-glass-hairline: var(--glass-hairline);
+  --blur-glass-sm: var(--glass-blur-sm);
+  --blur-glass: var(--glass-blur);
+  --blur-glass-lg: var(--glass-blur-lg);
+  --radius-glass: var(--radius-token-glass);
+  --font-sans: var(--font-sans-token);
+  --font-mono: var(--font-mono-token);
+  --font-display: var(--font-sans-token);
+  --radius-sm: var(--radius-token-sm);
+  --radius-md: var(--radius-token-md);
+  --radius-lg: var(--radius-token-card);
+  --radius-xl: var(--radius-token-overlay);
+  --radius-2xl: var(--radius-token-2xl);
+  --radius-3xl: var(--radius-token-3xl);
+  --text-micro: 0.6875rem;
+  --text-caption: 0.75rem;
+  --text-technical: 0.625rem;
+  --text-compact: 0.8125rem;
+  --text-body-sm: 0.875rem;
+  --text-body: 1rem;
+  --text-title-sm: 1.125rem;
+  --text-title: 1.375rem;
+  --text-page: 1.75rem;
+  --font-heading: var(--font-sans);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Primitive neutral ramp: clean cool-neutral gray (H214), no sage cast. */
+  --neutral-0: #ffffff;
+  --neutral-25: #fafbfd;
+  --neutral-50: #f3f6f9;
+  --neutral-100: #e9edf3;
+  --neutral-200: #dce3ec;
+  --neutral-300: #c1cbd8;
+  --neutral-400: #92a0b0;
+  --neutral-500: #647082;
+  --neutral-600: #4f5b6b;
+  --neutral-700: #384352;
+  --neutral-800: #262e3a;
+  --neutral-900: #161d28;
+  --neutral-950: #0c111a;
+
+  /*
+   * Brand is a saturated indigo blue (H234). The ramp keeps the luminance ladder of the
+   * fuchsia ramp it replaced, so every derived token (accent, ring, chart series,
+   * selection) lands at the same visual weight it had before.
+   *
+   * Hue-band overlap, measured rather than inferred. The concern when brand moved off
+   * fuchsia was that it now shares a narrow hue band and near-identical luminance with
+   * route-shadow, citation and route-auto. Judged by hue angle and luminance alone that
+   * looks alarming; ΔE2000 between the actual dark foregrounds is 9.9 to 18.9, all plainly
+   * distinguishable, so the foregrounds are fine.
+   *
+   * The collisions are in the light tints, where those two scalars say nothing: tint-to-tint
+   * ΔE runs 1.9 to 7.5. Two pairs mattered. selection vs route-shadow was 2.3 and is fixed
+   * below by moving --selection-50 off this ramp. route-auto #eaf2fb vs citation #e8f3fa is
+   * 1.9 — effectively one colour — but neither derives from brand, so that predates the hue
+   * change, and the two are not co-visible (citation's tint only renders inside the
+   * candidate-detail Dialog). Left alone deliberately; compare tints, not hue angles, before
+   * concluding two semantic roles are safe.
+   */
+  --brand-50: #eceefb;
+  --brand-100: #d3d8f6;
+  --brand-200: #a8b2ee;
+  --brand-400: #6b78e2;
+  --brand-500: #5464dc;
+  --brand-600: #4352d7;
+  --brand-700: #3441ab;
+  --brand-800: #28327f;
+  --brand-900: #1c2359;
+
+  --success-50: #e5f6ea;
+  --success-100: #c9edd5;
+  --success-200: #a6d9b6;
+  --success-600: #188a52;
+  --success-700: #127d4a;
+  --running-50: #e4f6f8;
+  --running-100: #cbecf0;
+  --running-200: #a2d8df;
+  --running-600: #0c7f8f;
+  --running-700: #0a6d7a;
+  /*
+   * Selection tracks the brand ramp at 200/700, but its tint deliberately leaves it.
+   *
+   * brand-50 is a faithful tint of brand-600 and therefore lands at H285 — a light tint of
+   * an indigo keeps the indigo's hue, and against this page's H251 canvas that reads as
+   * pink-violet, not "selected in the brand colour". It also collided with route-shadow's
+   * tint (ΔE2000 2.3, indistinguishable), and those two appear together on the route-trace
+   * and observability-detail pages. This value is pulled back to H268 with roughly twice
+   * the chroma: unmistakably blue against the canvas, ΔE 7.9 from route-shadow, 5.6 from
+   * route-auto. Do not "restore" it to brand-50.
+   */
+  --selection-50: #d9e7fd;
+  --selection-200: #a8b2ee;
+  --selection-700: #3441ab;
+  --citation-50: #e8f3fa;
+  --citation-200: #aacce2;
+  --citation-700: #1f6693;
+  --warning-50: #fff5df;
+  --warning-200: #efce8f;
+  --warning-700: #8a5600;
+  --danger-50: #fdecea;
+  --danger-200: #eab1ac;
+  --danger-700: #b12f26;
+
+  /* Semantic tokens used by shadcn primitives and project composites. */
+  --background: var(--neutral-50);
+  --foreground: var(--neutral-900);
+  --card: var(--neutral-0);
+  --card-foreground: var(--neutral-900);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--neutral-900);
+  --primary: var(--brand-600);
+  --primary-foreground: var(--neutral-0);
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-800);
+  /* secondary 表面上的临时 hover 抬升；--secondary 与 --muted 同值，需要独立一档才能有可见反馈。 */
+  --secondary-hover: var(--neutral-200);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-600);
+  --accent: var(--brand-50);
+  --accent-foreground: var(--brand-800);
+  --destructive: var(--danger-700);
+  --destructive-foreground: var(--neutral-0);
+  --border: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --input: var(--neutral-300);
+  --ring: var(--brand-500);
+  /*
+   * Admin page base — the flat fallback under the canvas wash, held at its lighter stop.
+   * Matched to the reference with its decorative background removed, where the page tone
+   * behind both sidebar and content measures #e7f3ff..#e0eaff. An earlier pass ran this
+   * three steps darker because it treated the reference's decorative orbs as the app's own
+   * canvas; that produced a saturated blue frame the reference does not have.
+   *
+   * Do not write "--token-name" followed by a colon anywhere inside :root, including in
+   * prose. check-f03.mjs parses this block with a plain regex and will read it as a
+   * token definition, silently overwriting the real value.
+   */
+  --admin-bg: #e9f5ff;
+  --admin-border: var(--neutral-200);
+  --overlay: rgb(12 17 26 / 0.42);
+
+  /*
+   * Glass surface layer. Decorative only: never replaces a semantic token, never sits
+   * under body text. Any tinted surface that encodes meaning (status/route/pipeline/
+   * citation) keeps its opaque hex so ambient light cannot bleed into it.
+   *
+   * Each tier is a single uniform white alpha. Sampling the reference at full resolution
+   * (6667x5000) shows a card is perfectly flat — every point inside one reads the same
+   * value. An earlier pass concluded the faces carried their own directional gradients;
+   * that came from scanning a downscaled copy, where the sample line crossed card edges,
+   * gutters and the panel and produced a false smooth ramp. The visible difference between
+   * two cards is the canvas gradient behind them, not any gradient of their own.
+   */
+  /*
+   * Alphas are solved backwards from two eyedropped values in the reference rather than
+   * guessed: its content panel reads #f0f7fe and a card on that panel reads #f7fcff. With
+   * white as the only overlay colour, the alpha that turns the canvas into the first value
+   * is 0.44, and the alpha that lifts the panel to the second is 0.48.
+   *
+   * The step between the two tiers is what matters. 0.84 panel / 0.65 card composited to
+   * #fbfcff / #fdfeff — both within two levels of pure white, so the tiers were invisible
+   * and the whole column read as flat paint. The point of a low panel alpha is that the
+   * canvas has to stay legible through it; that is the only thing making it read as glass.
+   */
+  --glass-panel: rgb(255 255 255 / 0.44);
+  --glass-card: rgb(255 255 255 / 0.48);
+  --glass-raised: rgb(255 255 255 / 0.62);
+  --glass-border: rgb(255 255 255 / 0.55);
+  --glass-highlight: rgb(255 255 255 / 0.85);
+  --glass-hairline: rgb(22 29 40 / 0.06);
+  --glass-blur-sm: 8px;
+  --glass-blur: 20px;
+  --glass-blur-lg: 28px;
+
+  /*
+   * Canvas wash. Two very light cool stops — a quiet diagonal, not coloured light.
+   *
+   * Two earlier mistakes are corrected here. The reference's decorative spheres were read
+   * as brand ambient light and reproduced as saturated radial blobs; they are props the
+   * designer used to show off the glass transparency, not part of the surface system. And
+   * the whole wash sat far too dark, which only looked plausible while the app was inset
+   * inside a frame. With the app full-bleed, this tone is what shows behind the sidebar,
+   * so it has to stay near the reference's own page value.
+   *
+   * The two stops are not free choices either. With the panel at 0.44, the canvas showing
+   * through it is what the eye reads as the content background, so the stops are set so the
+   * gradient's value under the middle of the content column composites to the reference's
+   * #f0f7fe. Widening this range does not make the wash prettier, it makes the content
+   * column visibly uneven corner to corner.
+   */
+  --canvas-from: #e9f5ff;
+  --canvas-to: #dfecfa;
+
+  /* Component roles. */
+  --running: var(--running-700);
+  --code: #121a24;
+  --code-foreground: #e6edf5;
+  --selection-bg: var(--selection-50);
+  --selection-fg: var(--selection-700);
+  /*
+   * 定量图表序列色阶。只表达同一个量的强弱两档，不承载状态语义；
+   * 两档都要对 card 底过图形对象的 3:1，所以不下探到 brand-200。
+   */
+  --chart-series-strong: var(--brand-700);
+  --chart-series-mid: var(--brand-400);
+  --chart-series-track: var(--muted);
+  --citation-bg: var(--citation-50);
+  --citation-fg: var(--citation-700);
+  --citation-border: var(--citation-200);
+  --focus-ring: var(--brand-500);
+
+  /* GraphRAG canvas roles. Entity categories consume this bounded palette by stable type hash. */
+  --graph-canvas: var(--neutral-25);
+  --graph-grid: rgb(193 203 216 / 0.30);
+  --graph-label: var(--neutral-900);
+  --graph-label-bg: var(--neutral-0);
+  --graph-node-border: var(--neutral-0);
+  --graph-edge: var(--neutral-400);
+  --graph-edge-label: var(--neutral-700);
+  --graph-selected: var(--brand-600);
+  --graph-node-1: #3068a8;
+  --graph-node-2: #12996c;
+  --graph-node-3: #c2603a;
+  --graph-node-4: #8a63c4;
+  --graph-node-5: #0a92a5;
+  --graph-node-6: #b5851a;
+  --graph-node-7: #c14a72;
+  --graph-node-8: #5567c4;
+
+  --route-mode-auto-bg: #eaf2fb;
+  --route-mode-auto-fg: #2b5fa0;
+  --route-mode-auto-border: #b9d0ec;
+  --route-mode-shadow-bg: #f2effa;
+  --route-mode-shadow-fg: #6a54a8;
+  --route-mode-shadow-border: #d2c8ee;
+
+  /* Chunk pipeline classification palette. Parent = magenta (answer-stage parent block),
+     child = amber (retrieval-stage child block). Stable category identity only. tint bg + dark
+     fg >= 4.5:1; solid variants carry white text >= 4.5:1. Consumed via .pipeline-tone-* scopes,
+     never branched as raw magenta-500/amber-600 in templates.
+
+     Parent was blue and had to leave the blue band. That blue was never actually distinct: its
+     tint measured ΔE2000 0.9 from route-auto and 2.4 from citation, i.e. the same colour. It
+     only looked separable while the brand was fuchsia and drew the eye elsewhere; once the
+     brand moved to indigo the whole band read as one thing. Magenta is now free — it is what
+     the brand vacated — and carries no status meaning, so it reads as a category rather than
+     as an outcome the way green (success) or amber-alone (waiting) would.
+
+     Parent H341 against child H74 is far enough apart at matched lightness that the two read
+     as a deliberate pair. Raising chroma moves it further from every neighbour, not closer:
+     danger 8.8, route-shadow 9.6, citation 18.0. Child is unchanged, 15.1 from the new parent.
+
+     The parent tint carries roughly 1.7x the child's chroma on purpose — do not "balance" it
+     back down. At equal C* a warm amber still reads as cream while a magenta reads as dusty
+     grey, so numerically matching the two makes the parent look washed out next to the child.
+     The first magenta pass did exactly that (C 7.8 vs the child's 7.5) and read as dull. */
+  --pipeline-parent-bg: #fce0f0;
+  --pipeline-parent-fg: #873c78;
+  --pipeline-parent-border: #f4c2e0;
+  --pipeline-parent-solid: #873c78;
+  --pipeline-child-bg: #faeee2;
+  --pipeline-child-fg: #805b31;
+  --pipeline-child-border: #e3cdb6;
+  --pipeline-child-solid: #805b31;
+
+  /* Chunk list grouping header. Distinct from pipeline-parent: this repeats down a long
+     list (one bar per parent block), so the surface must stay near-neutral. Blue identity
+     is carried by the P# badge (--primary solid, white text 6.13:1) and the heading text
+     (#2f5088, 7.39:1 on the tint). Surface C*5.8 reads as faint blue against secondary. */
+  --chunk-group-bg: #eef2fd;
+  --chunk-group-fg: #2f5088;
+  --chunk-group-border: #d3dbf4;
+  --chunk-group-solid: var(--primary);
+
+  --status-default-bg: var(--neutral-100);
+  --status-default-fg: var(--neutral-600);
+  --status-default-border: var(--neutral-300);
+  --status-waiting-bg: var(--warning-50);
+  --status-waiting-fg: var(--warning-700);
+  --status-waiting-border: var(--warning-200);
+  --status-running-bg: var(--running-50);
+  --status-running-fg: var(--running-700);
+  --status-running-border: var(--running-200);
+  --status-success-bg: var(--success-50);
+  --status-success-fg: var(--success-700);
+  --status-success-border: var(--success-200);
+  --status-danger-bg: var(--danger-50);
+  --status-danger-fg: var(--danger-700);
+  --status-danger-border: var(--danger-200);
+
+  --font-sans-token: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono-token: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --radius-token-sm: 0.25rem;
+  --radius-token-md: 0.375rem;
+  --radius-token-card: 0.5rem;
+  --radius-token-overlay: 0.625rem;
+  --radius-token-2xl: 0.75rem;
+  --radius-token-3xl: 1rem;
+  --radius-token-glass: 0.875rem;
+  --radius-token-round: 999px;
+  --radius: var(--radius-token-card);
+  --radius-sm: var(--radius-token-sm);
+  --radius-md: var(--radius-token-md);
+  --radius-lg: var(--radius-token-card);
+  --radius-xl: var(--radius-token-overlay);
+
+  --shadow-control: 0 1px 2px rgb(22 29 40 / 0.05);
+  --shadow-popover: 0 12px 32px rgb(22 29 40 / 0.12), 0 2px 8px rgb(22 29 40 / 0.08);
+  --shadow-overlay: 0 24px 64px rgb(12 17 26 / 0.18), 0 4px 16px rgb(12 17 26 / 0.1);
+  --shadow-sm: var(--shadow-control);
+  --shadow-md: var(--shadow-popover);
+  /* Glass elevation. The inset top line is what actually reads as "glass edge"; the
+     outer shadow only separates the surface from the ambient layer behind it. */
+  --shadow-glass: 0 1px 0 0 rgb(255 255 255 / 0.7) inset, 0 8px 24px rgb(22 29 40 / 0.06), 0 1px 2px rgb(22 29 40 / 0.04);
+  --shadow-glass-lg: 0 1px 0 0 rgb(255 255 255 / 0.75) inset, 0 16px 48px rgb(22 29 40 / 0.10), 0 2px 6px rgb(22 29 40 / 0.05);
+  --motion-fast: 150ms;
+  --motion-standard: 200ms;
+  --motion-slow: 250ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --z-dropdown: 40;
+  --z-sticky: 45;
+  --z-backdrop: 50;
+  --z-modal: 51;
+  /*
+   * 弹窗里的浮层面板（Select 面板等）必须高于 --z-modal。
+   * reka 的 SelectPortal 挂到 body，和 dialog-positioner 是兄弟节点，
+   * 兄弟之间 z 值优先于 DOM 顺序：低于 51 就会被对话框那张不透明白卡盖住。
+   * 此时面板仍有尺寸、仍能命中（positioner 与卡片都是 pointer-events:none），
+   * 只是一个像素都画不出来 —— 表现为"点了下拉没反应/没数据"。
+   * 不能复用 --z-dropdown(40)：那一档故意压在 --z-sticky(45) 之下，给页面级下拉用。
+   */
+  --z-popover: 55;
+  --z-toast: 60;
+  --z-tooltip: 70;
+
+}
+
+/* Opt-in dark surface only; the product remains light by default. */
+.dark {
+  --background: var(--neutral-950);
+  --foreground: var(--neutral-50);
+  --card: var(--neutral-900);
+  --card-foreground: var(--neutral-50);
+  --popover: var(--neutral-900);
+  --popover-foreground: var(--neutral-50);
+  --primary: var(--brand-500);
+  --primary-foreground: var(--neutral-0);
+  --secondary: var(--neutral-800);
+  --secondary-foreground: var(--neutral-50);
+  --secondary-hover: var(--neutral-700);
+  --muted: var(--neutral-800);
+  --muted-foreground: var(--neutral-300);
+  --accent: var(--brand-800);
+  --accent-foreground: var(--brand-100);
+  --border: var(--neutral-700);
+  --border-strong: var(--neutral-600);
+  --input: var(--neutral-700);
+  --ring: var(--brand-500);
+  --admin-bg: var(--neutral-950);
+  --admin-border: var(--neutral-700);
+  --code: var(--neutral-950);
+  --code-foreground: var(--neutral-100);
+  --route-mode-auto-bg: #1a2a3d;
+  --route-mode-auto-fg: #bcd6f2;
+  --route-mode-auto-border: #3f5d7e;
+  --route-mode-shadow-bg: #272338;
+  --route-mode-shadow-fg: #d6cbef;
+  --route-mode-shadow-border: #5b5178;
+  /* Follows the light theme off blue onto magenta at the same L* ladder and the same 1.7x
+     chroma scale. Untested against a real dark render — dark theme is not built this round —
+     but leaving these blue would desync the category from light. */
+  --pipeline-parent-bg: #341a2b;
+  --pipeline-parent-fg: #e6b3d3;
+  --pipeline-parent-border: #6b3f5c;
+  --pipeline-parent-solid: #b56b9c;
+  --pipeline-child-bg: #2e2114;
+  --pipeline-child-fg: #d4b89c;
+  --pipeline-child-border: #5e4932;
+  --pipeline-child-solid: #9c7852;
+  --chunk-group-bg: #1a2035;
+  --chunk-group-fg: #a3b8e0;
+  --chunk-group-border: #3a4d6e;
+  --chunk-group-solid: var(--primary);
+  /* 暗底上色阶反向：强档取更亮的品红，弱档才留在 brand-600 一带。 */
+  --chart-series-strong: var(--brand-200);
+  --chart-series-mid: var(--brand-500);
+  --chart-series-track: var(--neutral-700);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: var(--font-sans-token);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    min-width: 320px;
+    font-family: var(--font-sans-token);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+/*
+ ---break---
+ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

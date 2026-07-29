@@ -1,4 +1,5 @@
 <template>
+  <ConfirmDialog />
   <router-view v-if="isFullscreenLayout" />
 
   <div v-else class="app-shell">
@@ -21,6 +22,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import IcpFooter from './components/IcpFooter.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 
 const route = useRoute()
 
@@ -40,7 +42,7 @@ const isFullscreenLayout = computed(() => route.meta?.layout === 'fullscreen')
   display: flex;
   align-items: center;
   padding: 0 2px 10px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .brand-lockup {
@@ -56,18 +58,18 @@ const isFullscreenLayout = computed(() => route.meta?.layout === 'fullscreen')
   display: grid;
   place-items: center;
   border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: #ffffff;
-  font-size: 13px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: var(--text-compact);
   font-weight: 800;
 }
 
 .app-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--text-body);
   line-height: 1;
   font-weight: 700;
-  color: var(--color-text-strong);
+  color: var(--foreground);
 }
 
 .app-main {

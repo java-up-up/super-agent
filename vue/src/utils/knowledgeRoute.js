@@ -63,27 +63,15 @@ function resolveRouteStatusMeta(value) {
 
 function resolveConfidenceBand(value) {
   const numeric = toNumber(value)
-  if (numeric == null || numeric <= 0) {
+  if (numeric == null) {
     return {
-      label: '未形成有效置信度',
-      tone: 'danger'
-    }
-  }
-  if (numeric >= 0.8) {
-    return {
-      label: '高置信',
-      tone: 'success'
-    }
-  }
-  if (numeric >= 0.55) {
-    return {
-      label: '可用但偏保守',
-      tone: 'warning'
+      label: '置信度未记录',
+      tone: 'neutral'
     }
   }
   return {
-    label: '需要扩范围',
-    tone: 'danger'
+    label: '路由置信度',
+    tone: 'neutral'
   }
 }
 
@@ -108,6 +96,14 @@ export function formatRouteMode(value) {
   return ROUTE_MODE_LABELS[asString(value)] || asString(value) || '未知路由模式'
 }
 
+function resolveRouteModeTone(value) {
+  const mode = asString(value)
+  if (mode === 'auto' || mode === 'shadow') {
+    return mode
+  }
+  return 'neutral'
+}
+
 export function normalizeRouteTrace(record = {}) {
   const scopes = parseCandidateList(record.topScopesJson).map(normalizeCandidate)
   const topics = parseCandidateList(record.topTopicsJson).map(normalizeCandidate)
@@ -127,6 +123,7 @@ export function normalizeRouteTrace(record = {}) {
     ...record,
     mode,
     modeLabel: formatRouteMode(mode),
+    modeTone: resolveRouteModeTone(mode),
     scopes,
     topics,
     documents,
@@ -146,7 +143,8 @@ export function normalizeRouteTrace(record = {}) {
     candidateDocumentCount: documents.length,
     candidateTopicCount: topics.length,
     candidateScopeCount: scopes.length,
-    lowConfidenceWidened: mode === 'auto' && confidenceNumber != null && confidenceNumber < 0.8 && documents.length >= 5
+    // Widening is a backend observation. Do not infer it from score/count.
+    lowConfidenceWidened: record.lowConfidenceWidened === true || asString(record.lowConfidenceWidened) === '1'
   }
 }
 
@@ -187,28 +185,28 @@ export function buildChatRouteExplain(record) {
 
   if (trace.mode === 'auto') {
     summary = trace.topDocument
-      ? `系统先做知识范围预选，再把 ${trace.candidateDocumentCount} 份候选文档交给稳定检索链路；当前主候选是「${trace.topDocument.documentName || trace.topDocument.documentId}」。`
-      : '系统先做知识范围预选，再进入稳定检索链路；本轮没有形成稳定的显式主候选文档。'
+      ? `路由响应记录了 ${trace.candidateDocumentCount} 份候选文档，当前 Top1 是「${trace.topDocument.documentName || trace.topDocument.documentId}」。`
+      : '路由响应没有记录显式候选文档。'
 
     if (trace.lowConfidenceWidened) {
-      notes.push('当前置信度偏低，系统已放宽候选范围后再进入稳定检索。')
+      notes.push('接口显式记录本轮已扩展候选范围。')
     }
     if (!trace.documents.length) {
-      notes.push('原始路由没有产出显式候选文档，执行期会回退到可检索文档池。')
+      notes.push('接口未返回显式候选文档。')
     }
     if (trace.reasonText) {
       notes.push(`路由依据：${trace.reasonText}`)
     }
   } else if (trace.mode === 'shadow') {
     summary = trace.topDocument
-      ? `系统对这轮问题做了影子路由对比，影子 Top1 是「${trace.topDocument.documentName || trace.topDocument.documentId}」，但实际回答仍固定使用你手动选择的当前文档。`
-      : '系统对这轮问题做了影子路由对比，但没有形成稳定的影子候选文档。'
+      ? `影子路由响应的 Top1 是「${trace.topDocument.documentName || trace.topDocument.documentId}」。`
+      : '影子路由响应没有记录显式候选文档。'
 
     if (trace.hitTop3) {
-      notes.push('影子路由 Top3 已覆盖当前文档，说明自动路由与人工选文档基本一致。')
+      notes.push('接口记录：影子路由 Top3 包含当前所选文档。')
     }
     if (trace.missedTop3) {
-      notes.push('影子路由 Top3 未覆盖当前文档，说明这轮问题更像跨文档或元数据仍需补强。')
+      notes.push('接口记录：影子路由 Top3 不包含当前所选文档。')
     }
     if (trace.reasonText) {
       notes.push(`影子路由依据：${trace.reasonText}`)

@@ -182,6 +182,51 @@ async function requestMultipartApiEnvelope(path, formData, options = {}) {
   }
 }
 
+function extractDownloadFileName(disposition) {
+  const text = String(disposition || '')
+  const encodedMatch = text.match(/filename\*=UTF-8''([^;]+)/i)
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1])
+    } catch {
+      return encodedMatch[1]
+    }
+  }
+  const plainMatch = text.match(/filename="?([^";]+)"?/i)
+  return plainMatch?.[1] || ''
+}
+
+async function requestBlob(path, options = {}) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
+  try {
+    const response = await fetch(buildApiUrl(path), {
+      method: options.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildAuthHeaders(options.headers || {})
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal
+    })
+
+    if (!response.ok) {
+      handleUnauthorized(response)
+      throw new APIError(await readResponseMessage(response), response.status)
+    }
+
+    const blob = await response.blob()
+    return {
+      blob,
+      fileName: extractDownloadFileName(response.headers.get('content-disposition')),
+      contentType: response.headers.get('content-type') || blob.type || 'application/octet-stream'
+    }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 function dispatchStreamPayload(rawPayload, handlers) {
   if (!rawPayload) {
     return

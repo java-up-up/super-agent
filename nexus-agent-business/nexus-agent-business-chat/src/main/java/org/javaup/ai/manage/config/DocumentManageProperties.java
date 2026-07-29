@@ -35,16 +35,16 @@ public class DocumentManageProperties {
         private String endpoint = "http://127.0.0.1:9000";
         private String accessKey = "minioadmin";
         private String secretKey = "minioadmin";
-        private String bucketName = "super-agent-document";
+        private String bucketName = "nexus-agent-document";
         private String objectPrefix = "rag/document";
         private String parsedTextPrefix = "rag/parsed-text";
     }
 
     @Data
     public static class Kafka {
-        private String parseTopic = "super-agent-document-parse-route";
-        private String indexTopic = "super-agent-document-index-build";
-        private String groupId = "super-agent-document-manage";
+        private String parseTopic = "nexus-agent-document-parse-route";
+        private String indexTopic = "nexus-agent-document-index-build";
+        private String groupId = "nexus-agent-document-manage";
         private Boolean autoCreateTopics = Boolean.TRUE;
     }
 
@@ -93,7 +93,7 @@ public class DocumentManageProperties {
 
         private String password = "postgres";
 
-        private String poolName = "super-agent-manage-pgvector-hikari";
+        private String poolName = "nexus-agent-manage-pgvector-hikari";
 
         private Integer maximumPoolSize = 5;
 
@@ -111,15 +111,15 @@ public class DocumentManageProperties {
 
         private String password = "elastic";
 
-        private String indexName = "super_agent_document_keyword";
+        private String indexName = "nexus_agent_document_keyword";
 
         private String analyzer = "ik_max_word";
 
         private String searchAnalyzer = "ik_smart";
 
-        private String navigationIndexName = "super_agent_document_navigation";
+        private String navigationIndexName = "nexus_agent_document_navigation";
 
-        private String routeIndexName = "super_agent_knowledge_route";
+        private String routeIndexName = "nexus_agent_knowledge_route";
 
         private Integer connectTimeoutMillis = 3000;
 
@@ -135,7 +135,7 @@ public class DocumentManageProperties {
 
         private String username = "neo4j";
 
-        private String password = "neo4j";
+        private String password = "12345678";
 
         private String database = "neo4j";
 

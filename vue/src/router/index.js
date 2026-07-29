@@ -101,7 +101,7 @@ const router = createRouter({
           meta: {
             title: '轮次详情'
           }
-        }
+        },
       ]
     }
   ]

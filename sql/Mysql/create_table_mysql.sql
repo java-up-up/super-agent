@@ -1,3 +1,5 @@
+USE nexus_agent;
+
 CREATE TABLE IF NOT EXISTS nexus_agent_chat_dialogue (
     id BIGINT NOT NULL COMMENT '主键id',
     dialogue_code VARCHAR(64) NOT NULL COMMENT '业务会话编号',

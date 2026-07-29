@@ -1,1 +1,1 @@
-CREATE DATABASE nexus_agent_business_chat DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE nexus_agent DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

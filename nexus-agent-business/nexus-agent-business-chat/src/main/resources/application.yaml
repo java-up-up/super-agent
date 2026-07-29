@@ -18,12 +18,12 @@ spring:
       port: 6379
       timeout: 3000  
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/nexus_agent_business_chat?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/nexus_agent?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      pool-name: nexus-agent-business-chat-hikari
+      pool-name: nexus-agent-hikari
       maximum-pool-size: 10
       minimum-idle: 2
   kafka:
@@ -79,13 +79,13 @@ mybatis-plus:
 
 app:
   admin-auth:
-    username: ${SUPER_AGENT_ADMIN_USERNAME:admin}
-    password: ${SUPER_AGENT_ADMIN_PASSWORD:admin123456}
-    token-secret: ${SUPER_AGENT_ADMIN_TOKEN_SECRET:super-agent-admin-token-secret-change-me}
-    token-expire-minutes: ${SUPER_AGENT_ADMIN_TOKEN_EXPIRE_MINUTES:720}
+    username: ${NEXUS_AGENT_ADMIN_USERNAME:admin}
+    password: ${NEXUS_AGENT_ADMIN_PASSWORD:admin123456}
+    token-secret: ${NEXUS_AGENT_ADMIN_TOKEN_SECRET:nexus-agent-admin-token-secret-change-me}
+    token-expire-minutes: ${NEXUS_AGENT_ADMIN_TOKEN_EXPIRE_MINUTES:720}
   preview-mode:
-    enabled: ${SUPER_AGENT_PREVIEW_MODE_ENABLED:false}
-    message: ${SUPER_AGENT_PREVIEW_MODE_MESSAGE:线上环境为只读展示模式，仅开放浏览与检索能力}
+    enabled: ${NEXUS_AGENT_PREVIEW_MODE_ENABLED:false}
+    message: ${NEXUS_AGENT_PREVIEW_MODE_MESSAGE:线上环境为只读展示模式，仅开放浏览与检索能力}
   chat:
     # 是否开启“推荐追问问题”能力。
     # 开启后，主回答生成完成后会额外调用一次模型，产出最多 3 个可继续追问的问题。
@@ -261,7 +261,7 @@ app:
       secret-key: minioadmin
       # 文档管理模块统一使用的 bucket 名称。
       # 应用启动时会自动检查这个 bucket 是否存在，不存在就自动创建。
-      bucket-name: ${prefix.distinction.name:super-agent}-document
+      bucket-name: ${prefix.distinction.name:nexus-agent}-document
       # 原始文件对象前缀。
       # 最终对象路径一般会在这个前缀下再拼接文档 id 和文件名。
       object-prefix: rag/document
@@ -270,11 +270,11 @@ app:
       parsed-text-prefix: rag/parsed-text
     kafka:
       # 文档上传后，异步执行“解析 + 策略推荐”的主题。
-      parse-topic: super-agent-document-parse-route
+      parse-topic: nexus-agent-document-parse-route
       # 用户确认策略后，异步执行“切块 + 向量化 + 入库”的主题。
-      index-topic: super-agent-document-index-build
+      index-topic: nexus-agent-document-index-build
       # Kafka 消费组名称。
-      group-id: super-agent-document-manage
+      group-id: nexus-agent-document-manage
       # 本地开发时是否自动创建主题。
       # 如果线上 Kafka 不允许自动建 topic，可以改成 false，然后手动创建。
       auto-create-topics: true
@@ -317,7 +317,7 @@ app:
       # PostgreSQL 密码。
       password: postgres
       # 连接池名称，方便日志和监控定位。
-      pool-name: super-agent-manage-pgvector-hikari
+      pool-name: nexus-agent-manage-pgvector-hikari
       # 连接池最大连接数。
       maximum-pool-size: 5
       # 连接池最小空闲连接数。
@@ -333,11 +333,11 @@ app:
       # Elasticsearch 密码。
       password: ${ELASTICSEARCH_PASSWORD:elastic}
       # 关键词索引名称。
-      index-name: ${prefix.distinction.name:super-agent}-document-keyword
+      index-name: ${prefix.distinction.name:nexus-agent}-document-keyword
       # 导航层结构节点索引名称，粒度是 section/step/list_item，不和 chunk 级关键词索引混用。
-      navigation-index-name: ${prefix.distinction.name:super-agent}-document-navigation
+      navigation-index-name: ${prefix.distinction.name:nexus-agent}-document-navigation
       # 知识路由索引名称，粒度是 scope/topic/document 路由元数据，不和正文索引混用。
-      route-index-name: ${prefix.distinction.name:super-agent}-knowledge-route
+      route-index-name: ${prefix.distinction.name:nexus-agent}-knowledge-route
       # 建索引 analyzer。
       # 如果本地未安装 IK 插件，启动时会自动回退到 standard。
       analyzer: ik_max_word
@@ -366,7 +366,7 @@ logging:
 management:
   metrics:
     tags:
-      application: nexus-agent-business-chat
+      application: nexus-agent
   endpoint:
     health:
       show-details: always
